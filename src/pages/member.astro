@@ -1,0 +1,198 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Member" activePage="member">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">PELANGGAN</span>
+      <h1>Member</h1>
+      <p class="subtitle">Kelola profil dan progres diskon pelanggan.</p>
+    </div>
+    <a class="btn btn-primary" href="#form-member">Daftarkan member</a>
+  </header>
+
+  <div class="page-body">
+    <p class="state-message error" id="member-error" role="alert" hidden></p>
+
+    <section class="card card-pad member-register" id="form-member" aria-labelledby="member-form-title">
+      <div>
+        <span class="eyebrow" id="member-form-eyebrow">PENDAFTARAN</span>
+        <h2 class="section-title" id="member-form-title">Member baru</h2>
+      </div>
+      <form class="member-form" id="member-form">
+        <div class="form-group">
+          <label for="member-name">Nama</label>
+          <input class="form-control" id="member-name" name="name" type="text" maxlength="80" autocomplete="name" required />
+        </div>
+        <div class="form-group">
+          <label for="member-phone">Nomor telepon</label>
+          <input class="form-control" id="member-phone" name="phone" type="tel" autocomplete="tel" required />
+        </div>
+        <div class="form-group">
+          <label for="member-email">Email</label>
+          <input class="form-control" id="member-email" name="email" type="email" maxlength="120" autocomplete="email" required />
+        </div>
+        <div class="member-form-actions">
+          <button class="btn btn-primary" type="submit">Simpan member</button>
+          <button class="btn btn-secondary" id="cancel-member-edit" type="button" hidden>Batalkan</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad member-directory" aria-labelledby="member-list-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="member-list-title">Daftar member</h2>
+          <p><span id="member-count">0</span> pelanggan</p>
+        </div>
+        <label class="sr-only" for="member-search">Cari nama, telepon, atau email</label>
+        <input class="form-control member-search" id="member-search" type="search" placeholder="Cari nama atau kontak" />
+      </div>
+      <div class="table-wrap" id="member-table-wrap" hidden>
+        <table>
+          <thead>
+            <tr><th scope="col">Nama</th><th scope="col">Kontak</th><th scope="col">Pembelian</th><th scope="col">Diskon berikutnya</th><th scope="col">Aksi</th></tr>
+          </thead>
+          <tbody id="member-table"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="member-empty" hidden>
+        <strong id="member-empty-title">Belum ada member</strong>
+        <p id="member-empty-copy">Member yang didaftarkan akan tercatat di sini.</p>
+      </div>
+    </section>
+  </div>
+</MainLayout>
+
+<script>
+  import {
+    addMember, deleteMember, getMembers, getMemberDiscountRate, initStore, updateMember
+  } from '../lib/store.js';
+  import { escapeHtml } from '../lib/utils.js';
+
+  const form = document.getElementById('member-form');
+  const table = document.getElementById('member-table');
+  const tableWrap = document.getElementById('member-table-wrap');
+  const empty = document.getElementById('member-empty');
+  const error = document.getElementById('member-error');
+  const search = document.getElementById('member-search');
+  const cancelEdit = document.getElementById('cancel-member-edit');
+  let editingMemberId = null;
+
+  function resetForm() {
+    form.reset();
+    editingMemberId = null;
+    error.hidden = true;
+    document.getElementById('member-form-eyebrow').textContent = 'PENDAFTARAN';
+    document.getElementById('member-form-title').textContent = 'Member baru';
+    form.querySelector('button[type="submit"]').textContent = 'Simpan member';
+    cancelEdit.hidden = true;
+  }
+
+  function renderMembers() {
+    try {
+      const query = search.value.trim().toLocaleLowerCase('id-ID');
+      const members = getMembers();
+      const filtered = members.filter(member =>
+        `${member.name} ${member.phone} ${member.email}`.toLocaleLowerCase('id-ID').includes(query)
+      );
+      document.getElementById('member-count').textContent = String(members.length);
+      tableWrap.hidden = filtered.length === 0;
+      empty.hidden = filtered.length !== 0;
+      document.getElementById('member-empty-title').textContent = members.length === 0 ? 'Belum ada member' : 'Member tidak ditemukan';
+      document.getElementById('member-empty-copy').textContent = members.length === 0
+        ? 'Member yang didaftarkan akan tercatat di sini.'
+        : 'Coba kata pencarian lain.';
+      table.innerHTML = filtered.map(member => `
+        <tr>
+          <td data-label="Nama"><strong>${escapeHtml(member.name)}</strong></td>
+          <td data-label="Kontak"><span>${escapeHtml(member.phone)}</span><small class="member-email">${escapeHtml(member.email)}</small></td>
+          <td data-label="Pembelian">${member.completedPurchases}</td>
+          <td data-label="Diskon berikutnya"><span class="stock-level">${getMemberDiscountRate(member).toLocaleString('id-ID')}%</span></td>
+          <td data-label="Aksi">
+            <div class="table-actions">
+              <button class="btn btn-secondary btn-small" type="button" data-edit="${escapeHtml(member.id)}" aria-label="Ubah ${escapeHtml(member.name)}">Ubah</button>
+              <button class="btn btn-danger btn-small" type="button" data-delete="${escapeHtml(member.id)}" aria-label="Hapus ${escapeHtml(member.name)}">Hapus</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      error.hidden = true;
+    } catch (renderError) {
+      error.textContent = renderError instanceof Error ? renderError.message : 'Daftar member tidak dapat dimuat.';
+      error.hidden = false;
+    }
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const data = new FormData(form);
+    try {
+      const details = {
+        name: data.get('name'),
+        phone: data.get('phone'),
+        email: data.get('email')
+      };
+      if (editingMemberId) {
+        const member = updateMember(editingMemberId, details);
+        if (!member) throw new Error('Member tidak ditemukan. Muat ulang daftar sebelum menyimpan.');
+        resetForm();
+        renderMembers();
+        window.showToast(`${member.name} berhasil diperbarui.`, 'success');
+        return;
+      }
+
+      const member = addMember(details);
+      resetForm();
+      renderMembers();
+      window.showToast(`${member.name} berhasil didaftarkan.`, 'success');
+    } catch (submitError) {
+      error.textContent = submitError instanceof Error ? submitError.message : 'Member tidak dapat disimpan.';
+      error.hidden = false;
+    }
+  });
+
+  table.addEventListener('click', event => {
+    const editButton = event.target.closest('button[data-edit]');
+    const deleteButton = event.target.closest('button[data-delete]');
+    try {
+      if (editButton) {
+        const member = getMembers().find(entry => entry.id === editButton.dataset.edit);
+        if (!member) return;
+        error.hidden = true;
+        editingMemberId = member.id;
+        document.getElementById('member-name').value = member.name;
+        document.getElementById('member-phone').value = member.phone;
+        document.getElementById('member-email').value = member.email;
+        document.getElementById('member-form-eyebrow').textContent = 'PENGELOLAAN';
+        document.getElementById('member-form-title').textContent = 'Ubah data member';
+        form.querySelector('button[type="submit"]').textContent = 'Simpan perubahan';
+        cancelEdit.hidden = false;
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('member-name').focus();
+      } else if (deleteButton) {
+        const member = getMembers().find(entry => entry.id === deleteButton.dataset.delete);
+        if (!member || !window.confirm(`Hapus member ${member.name}?`)) return;
+        if (!deleteMember(member.id)) throw new Error('Member tidak ditemukan. Muat ulang daftar sebelum menghapus.');
+        if (editingMemberId === member.id) resetForm();
+        renderMembers();
+        window.showToast(`${member.name} berhasil dihapus.`, 'success');
+      }
+    } catch (actionError) {
+      error.textContent = actionError instanceof Error ? actionError.message : 'Aksi member gagal.';
+      error.hidden = false;
+    }
+  });
+
+  cancelEdit.addEventListener('click', resetForm);
+  search.addEventListener('input', renderMembers);
+
+  try {
+    initStore();
+    renderMembers();
+  } catch (initError) {
+    error.textContent = initError instanceof Error ? initError.message : 'Data member tidak dapat dimuat.';
+    error.hidden = false;
+  }
+</script>

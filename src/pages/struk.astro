@@ -1,0 +1,97 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Struk transaksi" activePage="kasir">
+  <header class="page-header receipt-page-header">
+    <div>
+      <span class="eyebrow">TRANSAKSI</span>
+      <h1>Struk</h1>
+      <p class="subtitle" id="receipt-status">Memuat detail transaksi...</p>
+    </div>
+    <div class="page-header-actions receipt-actions">
+      <a class="btn btn-secondary" href="/kasir">Transaksi baru</a>
+      <button class="btn btn-primary" id="print-receipt" type="button" disabled>Cetak struk</button>
+    </div>
+  </header>
+
+  <div class="page-body receipt-page">
+    <p class="state-message error" id="receipt-error" role="alert" hidden></p>
+    <article class="receipt" id="receipt-content" hidden aria-label="Struk transaksi FAMELLO STUDIO"></article>
+  </div>
+</MainLayout>
+
+<script>
+  import { getTransactionById, initStore } from '../lib/store.js';
+  import { escapeHtml, formatCurrency, formatDateTime, paymentMethodLabels } from '../lib/utils.js';
+
+  const error = document.getElementById('receipt-error');
+  const receipt = document.getElementById('receipt-content');
+  const printButton = document.getElementById('print-receipt');
+
+  try {
+    initStore();
+    const transactionId = new URLSearchParams(window.location.search).get('id');
+    const transaction = transactionId ? getTransactionById(transactionId) : null;
+
+    if (!transaction) {
+      error.textContent = 'Transaksi tidak ditemukan.';
+      error.hidden = false;
+      document.getElementById('receipt-status').textContent = 'Struk tidak tersedia.';
+      printButton.disabled = true;
+    } else {
+      const cashDetails = transaction.paymentMethod === 'cash'
+        ? `<div class="receipt-row"><span>Uang diterima</span><span>${formatCurrency(transaction.cashReceived)}</span></div>
+           <div class="receipt-row"><span>Kembalian</span><span>${formatCurrency(transaction.change)}</span></div>`
+        : '';
+      const customer = transaction.memberName ? `Member · ${transaction.memberName}` : 'Non-member';
+      const discountRow = transaction.discountAmount
+        ? `<div class="receipt-row"><span>Diskon member (${transaction.discountRate.toLocaleString('id-ID')}%)</span><span>− ${formatCurrency(transaction.discountAmount)}</span></div>`
+        : '';
+      const taxRow = transaction.taxRate
+        ? `<div class="receipt-row"><span>PPN (${transaction.taxRate.toLocaleString('id-ID')}%)</span><span>${formatCurrency(transaction.taxAmount)}</span></div>`
+        : '';
+
+      receipt.innerHTML = `
+        <header class="receipt-header">
+          <h2>FAMELLO STUDIO</h2>
+          <p>Parfum dan wewangian</p>
+        </header>
+        <div class="receipt-meta">
+          <div class="receipt-row"><span>No. transaksi</span><strong>${escapeHtml(transaction.id)}</strong></div>
+          <div class="receipt-row"><span>Tanggal</span><span>${escapeHtml(formatDateTime(transaction.date))}</span></div>
+          <div class="receipt-row"><span>Pelanggan</span><span>${escapeHtml(customer)}</span></div>
+        </div>
+        <div class="receipt-items">
+          ${transaction.items.map(item => `
+            <div>
+              <div class="receipt-item-name">${escapeHtml(item.name)} (${escapeHtml(item.size)})</div>
+              <div class="receipt-item-detail">
+                <span>${item.qty} × ${formatCurrency(item.price)}</span>
+                <span>${formatCurrency(item.subtotal)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="receipt-totals">
+          <div class="receipt-row"><span>Subtotal</span><span>${formatCurrency(transaction.subtotal ?? transaction.total)}</span></div>
+          ${discountRow}
+          ${taxRow}
+          <div class="receipt-row"><span>Metode</span><span>${escapeHtml(paymentMethodLabels[transaction.paymentMethod] || transaction.paymentMethod)}</span></div>
+          ${cashDetails}
+          <div class="receipt-row receipt-grand"><span>Total</span><span>${formatCurrency(transaction.total)}</span></div>
+        </div>
+        <footer class="receipt-footer">Terima kasih telah berbelanja.</footer>
+      `;
+      receipt.hidden = false;
+      document.getElementById('receipt-status').textContent = `Transaksi ${transaction.id}`;
+      printButton.disabled = false;
+    }
+  } catch (loadError) {
+    error.textContent = loadError instanceof Error ? loadError.message : 'Struk tidak dapat dimuat.';
+    error.hidden = false;
+    document.getElementById('receipt-status').textContent = 'Struk tidak tersedia.';
+  }
+
+  printButton.addEventListener('click', () => window.print());
+</script>

@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "products": [
+    {
+      "id": "FML001",
+      "name": "Famello Noir Absolu",
+      "category": "homme",
+      "size": "100ml",
+      "price": 950000,
+      "stock": 15,
+      "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
+      "description": "Oud gelap, lada hitam, dan kulit berpadu dalam aroma yang hangat.",
+      "notes": ["Bergamot", "Black Pepper", "Oud", "Leather"]
+    },
+    {
+      "id": "FML002",
+      "name": "Famello Noir Absolu",
+      "category": "homme",
+      "size": "50ml",
+      "price": 650000,
+      "stock": 22,
+      "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
+      "description": "Oud gelap, lada hitam, dan kulit berpadu dalam aroma yang hangat.",
+      "notes": ["Bergamot", "Black Pepper", "Oud", "Leather"]
+    },
+    {
+      "id": "FML003",
+      "name": "Famello Rosé Pétale",
+      "category": "femme",
+      "size": "100ml",
+      "price": 850000,
+      "stock": 18,
+      "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+      "description": "Mawar segar dan peony dengan akhir musk yang lembut.",
+      "notes": ["Rose", "Peony", "Musk", "Vanilla"]
+    },
+    {
+      "id": "FML004",
+      "name": "Famello Rosé Pétale",
+      "category": "femme",
+      "size": "50ml",
+      "price": 580000,
+      "stock": 25,
+      "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+      "description": "Mawar segar dan peony dengan akhir musk yang lembut.",
+      "notes": ["Rose", "Peony", "Musk", "Vanilla"]
+    },
+    {
+      "id": "FML005",
+      "name": "Famello Oud Royal",
+      "category": "unisex",
+      "size": "100ml",
+      "price": 1350000,
+      "stock": 8,
+      "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
+      "description": "Oud pilihan dengan kapulaga, mawar, dan amber.",
+      "notes": ["Oud", "Cardamom", "Rose", "Amber"]
+    },
+    {
+      "id": "FML006",
+      "name": "Famello Oud Royal",
+      "category": "unisex",
+      "size": "50ml",
+      "price": 890000,
+      "stock": 13,
+      "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
+      "description": "Oud pilihan dengan kapulaga, mawar, dan amber.",
+      "notes": ["Oud", "Cardamom", "Rose", "Amber"]
+    },
+    {
+      "id": "FML007",
+      "name": "Famello Amber Serenade",
+      "category": "homme",
+      "size": "100ml",
+      "price": 880000,
+      "stock": 12,
+      "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
+      "description": "Amber dan kayu cedar dengan jejak rempah yang tenang.",
+      "notes": ["Amber", "Cinnamon", "Tonka Bean", "Cedarwood"]
+    },
+    {
+      "id": "FML008",
+      "name": "Famello Amber Serenade",
+      "category": "homme",
+      "size": "50ml",
+      "price": 610000,
+      "stock": 17,
+      "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
+      "description": "Amber dan kayu cedar dengan jejak rempah yang tenang.",
+      "notes": ["Amber", "Cinnamon", "Tonka Bean", "Cedarwood"]
+    },
+    {
+      "id": "FML009",
+      "name": "Famello Azure Thé",
+      "category": "unisex",
+      "size": "100ml",
+      "price": 720000,
+      "stock": 30,
+      "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+      "description": "Teh putih, bergamot, dan udara laut yang bersih.",
+      "notes": ["Sea Salt", "Bergamot", "White Tea", "Driftwood"]
+    },
+    {
+      "id": "FML010",
+      "name": "Famello Azure Thé",
+      "category": "unisex",
+      "size": "50ml",
+      "price": 480000,
+      "stock": 35,
+      "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+      "description": "Teh putih, bergamot, dan udara laut yang bersih.",
+      "notes": ["Sea Salt", "Bergamot", "White Tea", "Driftwood"]
+    },
+    {
+      "id": "FML011",
+      "name": "Famello Bloom Éternel",
+      "category": "femme",
+      "size": "50ml",
+      "price": 600000,
+      "stock": 24,
+      "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
+      "description": "Freesia dan daun teh hijau dengan sentuhan musk putih.",
+      "notes": ["Freesia", "Green Tea", "Lily", "White Musk"]
+    },
+    {
+      "id": "FML012",
+      "name": "Famello Velvet Dream",
+      "category": "femme",
+      "size": "50ml",
+      "price": 520000,
+      "stock": 28,
+      "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
+      "description": "Iris, melati, dan musk kasmir dalam aroma lembut.",
+      "notes": ["Iris", "Jasmine", "Velvet Musk", "Cashmere"]
+    }
+  ],
+  "transactions": []
+}

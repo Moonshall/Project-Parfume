@@ -1,0 +1,97 @@
+---
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f1e8" />
+    <title>Masuk | FAMELLO STUDIO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="login-page">
+    <div class="ambient-scene" aria-hidden="true">
+      <div class="ambient-vial">
+        <div class="ambient-cap"></div>
+        <div class="ambient-neck"></div>
+        <div class="ambient-body"><span>FAMELLO</span><i></i></div>
+      </div>
+      <div class="ambient-shadow"></div>
+    </div>
+
+    <main class="login-main">
+      <section class="login-panel" aria-labelledby="login-title">
+        <a class="login-brand" href="/" aria-label="FAMELLO STUDIO">
+          <span class="login-brand-mark" aria-hidden="true">F</span>
+          <span><strong>FAMELLO</strong><small>Parfum dan wewangian</small></span>
+        </a>
+
+        <div class="login-heading">
+          <span class="eyebrow">RUANG KERJA TOKO</span>
+          <h1 id="login-title">Selamat datang.</h1>
+          <p>Masukkan username dan password untuk masuk.</p>
+        </div>
+
+        <form class="login-form" id="login-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input class="form-control" id="username" name="username" type="text" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <p class="login-error" id="login-error" role="alert" hidden></p>
+          <button class="btn btn-primary btn-wide login-submit" type="submit">Masuk ke FAMELLO</button>
+        </form>
+
+        <p class="login-notice">Login demo lokal. Data tersimpan di browser ini dan akun tidak melindungi data dari akses langsung.</p>
+      </section>
+      <footer class="login-footer"><span>FAMELLO STUDIO</span></footer>
+    </main>
+
+    <script>
+      import { getHomeForRole, getSession, signIn } from '../lib/auth.js';
+
+      const currentSession = getSession();
+      if (currentSession) window.location.replace(getHomeForRole(currentSession.role));
+
+      const form = document.getElementById('login-form');
+      const error = document.getElementById('login-error');
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const username = String(formData.get('username') || '');
+        const password = String(formData.get('password') || '');
+
+        try {
+          const role = signIn(username, password);
+          if (!role) {
+            error.textContent = 'Username atau password tidak sesuai.';
+            error.hidden = false;
+            document.getElementById('password').focus();
+            return;
+          }
+          window.location.assign(getHomeForRole(role));
+        } catch (loginError) {
+          error.textContent = loginError instanceof Error
+            ? `Login gagal: ${loginError.message}`
+            : 'Login gagal. Periksa pengaturan penyimpanan browser.';
+          error.hidden = false;
+        }
+      });
+
+      form.addEventListener('input', () => {
+        error.hidden = true;
+      });
+    </script>
+  </body>
+</html>

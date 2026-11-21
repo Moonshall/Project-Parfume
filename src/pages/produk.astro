@@ -1,0 +1,352 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Produk dan stok" activePage="produk">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">KATALOG</span>
+      <h1>Produk dan stok</h1>
+      <p class="subtitle">Atur nama, harga, foto, dan ketersediaan tiap varian.</p>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn btn-primary" id="add-product" type="button">Tambah produk</button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <p class="state-message error" id="products-error" role="alert" hidden></p>
+
+    <div class="management-toolbar">
+      <div class="search-field">
+        <label class="sr-only" for="product-search">Cari nama atau kode produk</label>
+        <input class="form-control" id="product-search" type="search" placeholder="Cari nama atau kode produk" />
+      </div>
+      <div class="form-group">
+        <label for="category-filter">Kategori</label>
+        <select class="form-control" id="category-filter">
+          <option value="all">Semua kategori</option>
+          <option value="homme">Homme</option>
+          <option value="femme">Femme</option>
+          <option value="unisex">Unisex</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="stock-filter">Ketersediaan</label>
+        <select class="form-control" id="stock-filter">
+          <option value="all">Semua stok</option>
+          <option value="low">Menipis, 5 atau kurang</option>
+          <option value="out">Habis</option>
+          <option value="available">Tersedia</option>
+        </select>
+      </div>
+      <span class="catalog-count" id="product-count" aria-live="polite"></span>
+    </div>
+
+    <p class="state-message" id="products-loading">Memuat katalog produk...</p>
+    <div class="table-wrap" id="products-table-wrap" hidden>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Produk</th>
+            <th scope="col">Kategori</th>
+            <th scope="col">Ukuran</th>
+            <th scope="col">Harga</th>
+            <th scope="col">Stok</th>
+            <th scope="col" aria-label="Aksi"></th>
+          </tr>
+        </thead>
+        <tbody id="products-table"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="products-empty" hidden>
+      <strong>Produk tidak ditemukan</strong>
+      <p>Ubah filter atau tambahkan varian parfum baru.</p>
+    </div>
+
+    <section class="card card-pad mb-lg data-card" aria-labelledby="data-title">
+      <div class="flex-between">
+        <div>
+          <h2 class="section-title" id="data-title">Data kasir di perangkat ini</h2>
+          <p class="text-muted text-small">Reset mengembalikan katalog contoh dan menghapus riwayat transaksi lokal.</p>
+        </div>
+        <button class="btn btn-danger btn-small" id="reset-data" type="button">Reset data contoh</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="product-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" tabindex="-1">
+      <div class="modal-header">
+        <h2 id="product-modal-title">Tambah produk</h2>
+        <button class="modal-close" id="close-product-modal" type="button" aria-label="Tutup formulir produk">×</button>
+      </div>
+      <form id="product-form" novalidate>
+        <div class="modal-body">
+          <input id="product-id" type="hidden" />
+          <div class="form-group">
+            <label for="product-name">Nama produk</label>
+            <input class="form-control" id="product-name" type="text" maxlength="80" required autocomplete="off" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="product-category">Kategori</label>
+              <select class="form-control" id="product-category" required>
+                <option value="">Pilih kategori</option>
+                <option value="homme">Homme</option>
+                <option value="femme">Femme</option>
+                <option value="unisex">Unisex</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="product-size">Ukuran</label>
+              <input class="form-control" id="product-size" type="text" maxlength="20" placeholder="Contoh: 50ml" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="product-price">Harga (Rp)</label>
+              <input class="form-control" id="product-price" type="number" min="1" step="1" inputmode="numeric" required />
+            </div>
+            <div class="form-group">
+              <label for="product-stock">Stok tersedia</label>
+              <input class="form-control" id="product-stock" type="number" min="0" step="1" inputmode="numeric" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="product-image">URL foto produk</label>
+            <input class="form-control" id="product-image" type="url" placeholder="https://..." autocomplete="url" />
+            <small class="form-help">Kosongkan bila ingin memakai bidang foto cadangan.</small>
+          </div>
+          <div class="form-group">
+            <label for="product-description">Deskripsi singkat</label>
+            <textarea class="form-control" id="product-description" maxlength="240" rows="3"></textarea>
+          </div>
+          <div class="form-errors" id="product-form-errors" role="alert" aria-live="assertive" tabindex="-1" hidden></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancel-product" type="button">Batal</button>
+          <button class="btn btn-primary" type="submit">Simpan produk</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</MainLayout>
+
+<script>
+  import {
+    addProduct, deleteProduct, getProducts, initStore,
+    resetStore, updateProduct
+  } from '../lib/store.js';
+  import { categoryLabels, escapeHtml, formatCurrency, generateProductId, trapDialogFocus, validateProduct } from '../lib/utils.js';
+
+  const tableBody = document.getElementById('products-table');
+  const tableWrap = document.getElementById('products-table-wrap');
+  const emptyState = document.getElementById('products-empty');
+  const loadingState = document.getElementById('products-loading');
+  const errorState = document.getElementById('products-error');
+  const modal = document.getElementById('product-modal');
+  const form = document.getElementById('product-form');
+  let search = '';
+  let category = 'all';
+  let stock = 'all';
+  let lastModalTrigger = null;
+
+  function showError(error) {
+    errorState.hidden = false;
+    errorState.textContent = error instanceof Error ? error.message : 'Data produk tidak dapat dimuat. Muat ulang halaman atau periksa penyimpanan browser.';
+    loadingState.hidden = true;
+  }
+
+  function getFilteredProducts() {
+    const query = search.toLocaleLowerCase('id-ID');
+    return getProducts().filter(product => {
+      const categoryMatches = category === 'all' || product.category === category;
+      const stockMatches = stock === 'all'
+        || (stock === 'low' && product.stock > 0 && product.stock <= 5)
+        || (stock === 'out' && product.stock === 0)
+        || (stock === 'available' && product.stock > 0);
+      const queryMatches = `${product.name} ${product.id}`.toLocaleLowerCase('id-ID').includes(query);
+      return categoryMatches && stockMatches && queryMatches;
+    });
+  }
+
+  function renderProducts() {
+    try {
+      const products = getFilteredProducts();
+      document.getElementById('product-count').textContent = `${products.length} varian`;
+      tableWrap.hidden = products.length === 0;
+      emptyState.hidden = products.length !== 0;
+      tableBody.innerHTML = products.map(product => {
+        const status = product.stock === 0 ? 'out' : product.stock <= 5 ? 'low' : '';
+        const stockLabel = product.stock === 0 ? 'Habis' : String(product.stock);
+        const image = product.image
+          ? `<img src="${escapeHtml(product.image)}" alt="" width="42" height="48" loading="lazy" />`
+          : '';
+        return `
+          <tr>
+            <td data-label="Produk">
+              <div class="table-product">
+                <div class="table-product-photo">${image}</div>
+                <div><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.id)}</small></div>
+              </div>
+            </td>
+            <td data-label="Kategori"><span class="category-tag">${escapeHtml(categoryLabels[product.category] || product.category)}</span></td>
+            <td data-label="Ukuran">${escapeHtml(product.size)}</td>
+            <td data-label="Harga"><span class="table-price">${formatCurrency(product.price)}</span></td>
+            <td data-label="Stok"><span class="stock-level ${status}">${stockLabel}</span></td>
+            <td data-label="Aksi">
+              <div class="table-actions">
+                <button class="btn btn-secondary btn-small" type="button" data-edit="${escapeHtml(product.id)}" aria-label="Ubah ${escapeHtml(product.name)}">Ubah</button>
+                <button class="btn btn-danger btn-small" type="button" data-delete="${escapeHtml(product.id)}" aria-label="Hapus ${escapeHtml(product.name)}">Hapus</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+      loadingState.hidden = true;
+      errorState.hidden = true;
+    } catch (error) {
+      showError(error);
+    }
+  }
+
+  function openModal(product = null, trigger = document.getElementById('add-product')) {
+    lastModalTrigger = trigger;
+    form.reset();
+    document.getElementById('product-id').value = product?.id || '';
+    document.getElementById('product-name').value = product?.name || '';
+    document.getElementById('product-category').value = product?.category || '';
+    document.getElementById('product-size').value = product?.size || '';
+    document.getElementById('product-price').value = product?.price ?? '';
+    document.getElementById('product-stock').value = product?.stock ?? '';
+    document.getElementById('product-image').value = product?.image || '';
+    document.getElementById('product-description').value = product?.description || '';
+    document.getElementById('product-modal-title').textContent = product ? 'Ubah produk' : 'Tambah produk';
+    document.getElementById('product-form-errors').hidden = true;
+    modal.hidden = false;
+    document.getElementById('product-name').focus();
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    if (lastModalTrigger && document.contains(lastModalTrigger)) lastModalTrigger.focus();
+  }
+
+  function validateImageUrl(value) {
+    if (!value) return true;
+    try {
+      return new URL(value).protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  function saveProduct(event) {
+    event.preventDefault();
+    const stockValue = document.getElementById('product-stock').value.trim();
+    const priceValue = document.getElementById('product-price').value.trim();
+    const data = {
+      name: document.getElementById('product-name').value.trim(),
+      category: document.getElementById('product-category').value,
+      size: document.getElementById('product-size').value.trim(),
+      price: priceValue === '' ? Number.NaN : Number(priceValue),
+      stock: stockValue === '' ? Number.NaN : Number(stockValue),
+      image: document.getElementById('product-image').value.trim(),
+      description: document.getElementById('product-description').value.trim(),
+      notes: []
+    };
+    const errors = validateProduct(data);
+    if (!validateImageUrl(data.image)) errors.push('URL foto harus menggunakan HTTPS yang valid.');
+    if (data.description.length > 240) errors.push('Deskripsi maksimal 240 karakter.');
+
+    const errorsEl = document.getElementById('product-form-errors');
+    if (errors.length > 0) {
+      errorsEl.innerHTML = errors.map(message => `<div>${escapeHtml(message)}</div>`).join('');
+      errorsEl.hidden = false;
+      errorsEl.focus();
+      return;
+    }
+
+    try {
+      const id = document.getElementById('product-id').value;
+      if (id) {
+        const updated = updateProduct(id, data);
+        if (!updated) throw new Error('Produk tidak ditemukan. Muat ulang daftar sebelum menyimpan.');
+        window.showToast('Perubahan produk tersimpan.', 'success');
+      } else {
+        data.id = generateProductId(getProducts());
+        addProduct(data);
+        window.showToast('Produk baru ditambahkan.', 'success');
+      }
+      closeModal();
+      renderProducts();
+    } catch (error) {
+      errorsEl.textContent = error instanceof Error ? error.message : 'Produk tidak dapat disimpan.';
+      errorsEl.hidden = false;
+    }
+  }
+
+  document.getElementById('add-product').addEventListener('click', () => openModal());
+  document.getElementById('close-product-modal').addEventListener('click', closeModal);
+  document.getElementById('cancel-product').addEventListener('click', closeModal);
+  form.addEventListener('submit', saveProduct);
+
+  document.getElementById('product-search').addEventListener('input', event => {
+    search = event.target.value.trim();
+    renderProducts();
+  });
+  document.getElementById('category-filter').addEventListener('change', event => {
+    category = event.target.value;
+    renderProducts();
+  });
+  document.getElementById('stock-filter').addEventListener('change', event => {
+    stock = event.target.value;
+    renderProducts();
+  });
+
+  tableBody.addEventListener('click', event => {
+    const editButton = event.target.closest('button[data-edit]');
+    const deleteButton = event.target.closest('button[data-delete]');
+    try {
+      if (editButton) {
+        const product = getProducts().find(item => item.id === editButton.dataset.edit);
+        if (product) openModal(product, editButton);
+      } else if (deleteButton) {
+        const product = getProducts().find(item => item.id === deleteButton.dataset.delete);
+        if (!product || !window.confirm(`Hapus ${product.name} dari katalog?`)) return;
+        deleteProduct(product.id);
+        renderProducts();
+        window.showToast('Produk dihapus dari katalog.', 'success');
+      }
+    } catch (error) {
+      window.showToast(error instanceof Error ? error.message : 'Aksi produk gagal.', 'error');
+    }
+  });
+
+  document.getElementById('reset-data').addEventListener('click', () => {
+    if (!window.confirm('Reset katalog, stok, keranjang, dan seluruh riwayat transaksi ke data contoh?')) return;
+    try {
+      resetStore();
+      renderProducts();
+      window.showToast('Data contoh berhasil dipulihkan.', 'success');
+    } catch (error) {
+      showError(error);
+    }
+  });
+
+  modal.addEventListener('click', event => {
+    if (event.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', event => {
+    if (modal.hidden) return;
+    if (event.key === 'Escape') closeModal();
+    else trapDialogFocus(modal.querySelector('[role="dialog"]'), event);
+  });
+
+  try {
+    initStore();
+    renderProducts();
+  } catch (error) {
+    showError(error);
+  }
+</script>

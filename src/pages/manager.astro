@@ -1,0 +1,225 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Ringkasan manager" activePage="dashboard">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">PANEL MANAGER</span>
+      <h1>Ringkasan toko</h1>
+      <p class="subtitle" id="manager-date">Memuat tanggal...</p>
+    </div>
+    <div class="page-header-actions">
+      <a class="btn btn-primary" href="/produk">Kelola produk & stok</a>
+      <a class="btn btn-secondary" href="/riwayat">Lihat keuangan</a>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <p class="state-message error" id="manager-error" role="alert" hidden></p>
+
+    <section class="stats-grid manager-stats" aria-label="Ringkasan operasional">
+      <article class="stat-card featured">
+        <span class="stat-label">Omzet hari ini</span>
+        <strong class="stat-value" id="manager-sales-today">Rp 0</strong>
+        <span class="stat-footnote">Total transaksi hari ini</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Omzet bulan ini</span>
+        <strong class="stat-value" id="manager-sales-month">Rp 0</strong>
+        <span class="stat-footnote">Pendapatan bruto tercatat</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Transaksi hari ini</span>
+        <strong class="stat-value" id="manager-transaction-count">0</strong>
+        <span class="stat-footnote">Transaksi tersimpan</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Jumlah member</span>
+        <strong class="stat-value" id="manager-member-count">0</strong>
+        <span class="stat-footnote">Terdaftar di perangkat ini</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Unit stok</span>
+        <strong class="stat-value" id="manager-stock-count">0</strong>
+        <span class="stat-footnote">Di seluruh varian</span>
+      </article>
+    </section>
+
+    <section class="card manager-tax-card" aria-labelledby="manager-tax-title">
+      <div>
+        <span class="eyebrow">PENGATURAN TRANSAKSI</span>
+        <h2 id="manager-tax-title">PPN</h2>
+        <p>Tarif ini dipakai untuk pembayaran berikutnya.</p>
+      </div>
+      <form class="manager-tax-form" id="tax-form">
+        <div class="form-group">
+          <label for="tax-rate">Tarif pajak (%)</label>
+          <input class="form-control" id="tax-rate" name="taxRate" type="number" min="0" max="100" step="0.1" required />
+        </div>
+        <button class="btn btn-primary" type="submit">Simpan tarif</button>
+      </form>
+      <p class="tax-feedback" id="tax-feedback" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="manager-actions" aria-label="Halaman pengelolaan">
+      <a class="btn btn-secondary" href="/produk">Harga & stok</a>
+      <a class="btn btn-secondary" href="/member">Daftar member</a>
+      <a class="btn btn-secondary" href="/riwayat">Transaksi</a>
+    </section>
+
+    <div class="dashboard-grid">
+      <section class="card card-pad" aria-labelledby="manager-recent-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="manager-recent-title">Penjualan terbaru</h2>
+            <p>Catatan transaksi yang paling baru.</p>
+          </div>
+          <a class="btn-link" href="/riwayat">Semua transaksi</a>
+        </div>
+        <p class="state-message" id="manager-recent-loading">Memuat transaksi...</p>
+        <div id="manager-recent-transactions"></div>
+      </section>
+
+      <section class="card card-pad" aria-labelledby="manager-stock-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="manager-stock-title">Stok perlu diperiksa</h2>
+            <p>Varian dengan stok paling rendah.</p>
+          </div>
+          <a class="btn-link" href="/produk">Atur stok</a>
+        </div>
+        <p class="state-message" id="manager-stock-loading">Memuat stok...</p>
+        <div id="manager-low-stock"></div>
+      </section>
+    </div>
+
+    <section class="card card-pad manager-members" aria-labelledby="manager-members-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="manager-members-title">Member teratas</h2>
+          <p>Ringkasan belanja dan diskon berikutnya.</p>
+        </div>
+        <a class="btn-link" href="/member">Lihat semua</a>
+      </div>
+      <p class="state-message" id="manager-members-empty" hidden>Belum ada member terdaftar.</p>
+      <div class="table-wrap" id="manager-members-wrap" hidden>
+        <table>
+          <thead><tr><th scope="col">Nama</th><th scope="col">Transaksi</th><th scope="col">Diskon berikutnya</th></tr></thead>
+          <tbody id="manager-members-list"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</MainLayout>
+
+<script>
+  import {
+    getMembers, getMemberDiscountRate, getProducts, getSettings, getTransactions,
+    getTodayStats, getMonthlyRevenue, initStore, saveTaxRate
+  } from '../lib/store.js';
+  import { categoryLabels, escapeHtml, formatCurrency, formatDate, formatDateTime, paymentMethodLabels } from '../lib/utils.js';
+
+  const errorEl = document.getElementById('manager-error');
+  const recentLoading = document.getElementById('manager-recent-loading');
+  const stockLoading = document.getElementById('manager-stock-loading');
+  const taxForm = document.getElementById('tax-form');
+  const taxFeedback = document.getElementById('tax-feedback');
+
+  function showError(error) {
+    errorEl.hidden = false;
+    errorEl.textContent = error instanceof Error ? error.message : 'Data manager tidak dapat dimuat. Coba muat ulang halaman.';
+    recentLoading.hidden = true;
+    stockLoading.hidden = true;
+  }
+
+  try {
+    initStore();
+    const products = getProducts();
+    const transactions = getTransactions();
+    const members = getMembers();
+    const settings = getSettings();
+    const stats = getTodayStats();
+    const stockCount = products.reduce((sum, product) => sum + product.stock, 0);
+
+    document.getElementById('manager-date').textContent = formatDate(new Date().toISOString());
+    document.getElementById('manager-sales-today').textContent = formatCurrency(stats.totalSales);
+    document.getElementById('manager-sales-month').textContent = formatCurrency(getMonthlyRevenue());
+    document.getElementById('manager-transaction-count').textContent = String(stats.transactionCount);
+    document.getElementById('manager-stock-count').textContent = String(stockCount);
+    document.getElementById('manager-member-count').textContent = String(members.length);
+    document.getElementById('tax-rate').value = String(settings.taxRate);
+
+    recentLoading.hidden = true;
+    const recentContainer = document.getElementById('manager-recent-transactions');
+    const recentTransactions = transactions.slice(0, 5);
+    if (recentTransactions.length === 0) {
+      recentContainer.innerHTML = `
+        <div class="empty-state">
+          <strong>Belum ada transaksi</strong>
+          <p>Penjualan selesai akan dicatat di sini.</p>
+          <a class="btn btn-secondary" href="/kasir">Buka kasir</a>
+        </div>`;
+    } else {
+      recentContainer.innerHTML = recentTransactions.map(transaction => `
+        <div class="list-row">
+          <div class="list-primary">
+            <strong>${escapeHtml(transaction.id)}</strong>
+            <small>${escapeHtml(formatDateTime(transaction.date))} · ${escapeHtml(paymentMethodLabels[transaction.paymentMethod] || transaction.paymentMethod)}</small>
+          </div>
+          <div class="list-trailing"><strong>${formatCurrency(transaction.total)}</strong></div>
+        </div>
+      `).join('');
+    }
+
+    stockLoading.hidden = true;
+    const stockContainer = document.getElementById('manager-low-stock');
+    const lowStockProducts = products.filter(product => product.stock <= 5).sort((a, b) => a.stock - b.stock).slice(0, 6);
+    if (lowStockProducts.length === 0) {
+      stockContainer.innerHTML = `
+        <div class="empty-state">
+          <strong>Stok masih tersedia</strong>
+          <p>Belum ada varian yang perlu segera diisi ulang.</p>
+        </div>`;
+    } else {
+      stockContainer.innerHTML = lowStockProducts.map(product => `
+        <div class="list-row">
+          <div class="list-primary">
+            <strong>${escapeHtml(product.name)}</strong>
+            <small>${escapeHtml(product.size)} · ${escapeHtml(categoryLabels[product.category] || product.category)}</small>
+          </div>
+          <span class="stock-level ${product.stock === 0 ? 'out' : 'low'}">${product.stock === 0 ? 'Habis' : `Sisa ${product.stock}`}</span>
+        </div>
+      `).join('');
+    }
+
+    const membersWrap = document.getElementById('manager-members-wrap');
+    const membersEmpty = document.getElementById('manager-members-empty');
+    const membersList = document.getElementById('manager-members-list');
+    const topMembers = members.slice().sort((a, b) => b.completedPurchases - a.completedPurchases).slice(0, 5);
+    membersWrap.hidden = topMembers.length === 0;
+    membersEmpty.hidden = topMembers.length !== 0;
+    membersList.innerHTML = topMembers.map(member => `
+      <tr>
+        <td data-label="Nama">${escapeHtml(member.name)}</td>
+        <td data-label="Transaksi">${member.completedPurchases}</td>
+        <td data-label="Diskon berikutnya">${getMemberDiscountRate(member).toLocaleString('id-ID')}%</td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    showError(error);
+  }
+
+  taxForm.addEventListener('submit', event => {
+    event.preventDefault();
+    try {
+      const settings = saveTaxRate(document.getElementById('tax-rate').value);
+      document.getElementById('tax-rate').value = String(settings.taxRate);
+      taxFeedback.textContent = `Tarif PPN ${settings.taxRate.toLocaleString('id-ID')}% tersimpan.`;
+      taxFeedback.classList.remove('error');
+    } catch (error) {
+      taxFeedback.textContent = error instanceof Error ? error.message : 'Tarif pajak tidak dapat disimpan.';
+      taxFeedback.classList.add('error');
+    }
+  });
+</script>

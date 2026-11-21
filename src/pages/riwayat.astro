@@ -1,0 +1,192 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Riwayat transaksi" activePage="riwayat">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">CATATAN PENJUALAN</span>
+      <h1>Riwayat transaksi</h1>
+      <p class="subtitle">Cari transaksi berdasarkan nomor, tanggal, atau metode pembayaran.</p>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <p class="state-message error" id="history-error" role="alert" hidden></p>
+
+    <div class="management-toolbar">
+      <div class="search-field">
+        <label class="sr-only" for="transaction-search">Cari nomor transaksi</label>
+        <input class="form-control" id="transaction-search" type="search" placeholder="Cari nomor transaksi" />
+      </div>
+      <div class="form-group">
+        <label for="transaction-date">Tanggal</label>
+        <input class="form-control" id="transaction-date" type="date" />
+      </div>
+      <div class="form-group">
+        <label for="transaction-method">Metode pembayaran</label>
+        <select class="form-control" id="transaction-method">
+          <option value="all">Semua metode</option>
+          <option value="cash">Tunai</option>
+          <option value="qris">QRIS</option>
+          <option value="card">Debit/Kredit</option>
+        </select>
+      </div>
+    </div>
+
+    <section class="stats-grid" aria-label="Ringkasan transaksi terfilter">
+      <article class="stat-card featured">
+        <span class="stat-label">Pendapatan terfilter</span>
+        <strong class="stat-value" id="history-revenue">Rp 0</strong>
+        <span class="stat-footnote">Dari hasil yang tampil</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Transaksi</span>
+        <strong class="stat-value" id="history-count">0</strong>
+        <span class="stat-footnote">Jumlah hasil yang tampil</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Tunai</span>
+        <strong class="stat-value" id="history-cash">Rp 0</strong>
+        <span class="stat-footnote">Pendapatan dari pembayaran tunai</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Non tunai</span>
+        <strong class="stat-value" id="history-digital">Rp 0</strong>
+        <span class="stat-footnote">QRIS dan debit/kredit dummy</span>
+      </article>
+    </section>
+
+    <div class="flex-between mb-md">
+      <span class="catalog-count" id="transaction-count" aria-live="polite">Memuat transaksi...</span>
+      <button class="btn btn-danger btn-small" id="clear-history" type="button">Hapus semua riwayat</button>
+    </div>
+
+    <p class="state-message" id="history-loading">Memuat riwayat transaksi...</p>
+    <div class="table-wrap" id="history-table-wrap" hidden>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Nomor transaksi</th>
+            <th scope="col">Tanggal dan waktu</th>
+            <th scope="col">Item</th>
+            <th scope="col">Pelanggan</th>
+            <th scope="col">Total</th>
+            <th scope="col">Metode</th>
+            <th scope="col">Struk</th>
+          </tr>
+        </thead>
+        <tbody id="history-table"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="history-empty" hidden>
+      <strong>Belum ada transaksi yang cocok</strong>
+      <p>Transaksi yang berhasil disimpan akan muncul di halaman ini.</p>
+      <a class="btn btn-secondary" href="/kasir">Buka kasir</a>
+    </div>
+  </div>
+
+</MainLayout>
+
+<script>
+  import { clearTransactions, getTransactions, initStore } from '../lib/store.js';
+  import { escapeHtml, formatCurrency, formatDateTime, paymentMethodLabels } from '../lib/utils.js';
+
+  const errorEl = document.getElementById('history-error');
+  const loadingEl = document.getElementById('history-loading');
+  const tableWrap = document.getElementById('history-table-wrap');
+  const emptyEl = document.getElementById('history-empty');
+  const tableBody = document.getElementById('history-table');
+  let search = '';
+  let date = '';
+  let method = 'all';
+
+  function showError(error) {
+    errorEl.hidden = false;
+    errorEl.textContent = error instanceof Error ? error.message : 'Riwayat tidak dapat dimuat. Muat ulang halaman atau periksa penyimpanan browser.';
+    loadingEl.hidden = true;
+  }
+
+  function getFilteredTransactions() {
+    const query = search.toLocaleLowerCase('id-ID');
+    return getTransactions().filter(transaction => {
+      const dateMatches = !date || (transaction.date && new Date(transaction.date).toLocaleDateString('sv-SE') === date);
+      const methodMatches = method === 'all' || transaction.paymentMethod === method;
+      const searchMatches = `${transaction.id} ${transaction.items.map(item => item.name).join(' ')}`
+        .toLocaleLowerCase('id-ID').includes(query);
+      const memberMatches = `${transaction.memberName || ''}`.toLocaleLowerCase('id-ID').includes(query);
+      return dateMatches && methodMatches && (searchMatches || memberMatches);
+    });
+  }
+
+  function render() {
+    try {
+      const visibleTransactions = getFilteredTransactions();
+      const total = visibleTransactions.reduce((sum, transaction) => sum + transaction.total, 0);
+      const cash = visibleTransactions.filter(transaction => transaction.paymentMethod === 'cash')
+        .reduce((sum, transaction) => sum + transaction.total, 0);
+      const digital = total - cash;
+      document.getElementById('history-revenue').textContent = formatCurrency(total);
+      document.getElementById('history-count').textContent = String(visibleTransactions.length);
+      document.getElementById('history-cash').textContent = formatCurrency(cash);
+      document.getElementById('history-digital').textContent = formatCurrency(digital);
+      document.getElementById('transaction-count').textContent = `${visibleTransactions.length} transaksi`;
+      tableWrap.hidden = visibleTransactions.length === 0;
+      emptyEl.hidden = visibleTransactions.length !== 0;
+      tableBody.innerHTML = visibleTransactions.map(transaction => {
+        const quantity = transaction.items.reduce((sum, item) => sum + item.qty, 0);
+        const paymentLabel = paymentMethodLabels[transaction.paymentMethod] || transaction.paymentMethod;
+        return `
+          <tr>
+            <td data-label="Nomor"><strong>${escapeHtml(transaction.id)}</strong></td>
+            <td data-label="Tanggal">${escapeHtml(formatDateTime(transaction.date))}</td>
+            <td data-label="Item">${transaction.items.length} varian · ${quantity} parfum</td>
+            <td data-label="Pelanggan">${escapeHtml(transaction.memberName || 'Non-member')}</td>
+            <td data-label="Total"><span class="table-price">${formatCurrency(transaction.total)}</span></td>
+            <td data-label="Metode"><span class="category-tag">${escapeHtml(paymentLabel)}</span></td>
+            <td data-label="Struk">
+              <a class="btn btn-secondary btn-small" href="/struk?id=${encodeURIComponent(transaction.id)}">Buka struk</a>
+            </td>
+          </tr>`;
+      }).join('');
+      loadingEl.hidden = true;
+      errorEl.hidden = true;
+    } catch (error) {
+      showError(error);
+    }
+  }
+
+  document.getElementById('transaction-search').addEventListener('input', event => {
+    search = event.target.value.trim();
+    render();
+  });
+  document.getElementById('transaction-date').addEventListener('change', event => {
+    date = event.target.value;
+    render();
+  });
+  document.getElementById('transaction-method').addEventListener('change', event => {
+    method = event.target.value;
+    render();
+  });
+  document.getElementById('clear-history').addEventListener('click', () => {
+    try {
+      if (getTransactions().length === 0) {
+        window.showToast('Belum ada riwayat untuk dihapus.', 'warning');
+        return;
+      }
+      if (!window.confirm('Hapus seluruh riwayat transaksi dari perangkat ini?')) return;
+      clearTransactions();
+      render();
+      window.showToast('Riwayat transaksi dihapus.', 'success');
+    } catch (error) {
+      showError(error);
+    }
+  });
+
+  try {
+    initStore();
+    render();
+  } catch (error) {
+    showError(error);
+  }
+</script>

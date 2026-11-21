@@ -1,0 +1,14 @@
+{
+  "name": "famello-pos",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "FAMELLO Perfume POS System",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.16.0"
+  }
+}

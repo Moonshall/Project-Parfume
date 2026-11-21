@@ -1,0 +1,165 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title: string;
+  activePage?: string;
+}
+
+const { title, activePage = '' } = Astro.props;
+
+const navItems = [
+  { href: '/manager', label: 'Ringkasan manager', key: 'dashboard', mark: '01', managerOnly: true },
+  { href: '/kasir', label: 'Kasir', key: 'kasir', mark: '02' },
+  { href: '/member', label: 'Member', key: 'member', mark: '03' },
+  { href: '/produk', label: 'Produk & stok', key: 'produk', mark: '04', managerOnly: true },
+  { href: '/riwayat', label: 'Transaksi', key: 'riwayat', mark: '05', managerOnly: true }
+];
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f1e8" />
+    <title>{title} | FAMELLO STUDIO</title>
+    <script is:inline>
+      (() => {
+        try {
+          const session = JSON.parse(sessionStorage.getItem('famello_session_v1') || 'null');
+          const role = session?.role;
+          if (role !== 'cashier' && role !== 'manager') {
+            window.location.replace('/');
+            return;
+          }
+          document.documentElement.classList.add(`role-${role}`);
+          const cashierPaths = ['/kasir', '/member', '/pembayaran', '/struk'];
+          if (role === 'cashier' && !cashierPaths.includes(window.location.pathname)) {
+            window.location.replace('/kasir');
+          }
+        } catch {
+          window.location.replace('/');
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Lewati ke konten utama</a>
+
+    <div class="ambient-scene" aria-hidden="true">
+      <div class="ambient-vial">
+        <div class="ambient-cap"></div>
+        <div class="ambient-neck"></div>
+        <div class="ambient-body">
+          <span>FAMELLO</span>
+          <i></i>
+        </div>
+      </div>
+      <div class="ambient-shadow"></div>
+    </div>
+
+    <div class="app-layout">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand-lockup" href="/" aria-label="FAMELLO, halaman utama">
+          <span class="brand-copy">
+            <strong>FAMELLO</strong>
+            <small>Parfum dan wewangian</small>
+          </span>
+        </a>
+
+        <div class="nav-caption">OPERASIONAL TOKO</div>
+        <nav class="sidebar-nav" aria-label="Navigasi utama">
+          {navItems.map(item => (
+            <a
+              href={item.href}
+              class:list={['nav-link', { active: activePage === item.key }]}
+              data-manager-only={item.managerOnly ? 'true' : undefined}
+              aria-current={activePage === item.key ? 'page' : undefined}
+            >
+              <span class="nav-mark" aria-hidden="true">{item.mark}</span>
+              <span>{item.label}</span>
+            </a>
+          ))}
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="account-note">
+            <strong id="account-role">Akun lokal</strong>
+            <small>FAMELLO STUDIO</small>
+          </div>
+          <button class="logout-button" id="logout-button" type="button">Keluar</button>
+          <div class="sidebar-meta">FAMELLO STUDIO</div>
+        </div>
+      </aside>
+
+      <button
+        class="mobile-nav-toggle"
+        id="nav-toggle"
+        type="button"
+        aria-label="Buka navigasi"
+        aria-controls="sidebar"
+        aria-expanded="false"
+      >
+        <span></span><span></span>
+      </button>
+      <button class="sidebar-overlay" id="sidebar-overlay" type="button" aria-label="Tutup navigasi" tabindex="-1" hidden></button>
+
+      <main class="main-content" id="main-content" tabindex="-1">
+        <slot />
+        <footer class="app-footer">
+          <strong>FAMELLO STUDIO</strong>
+        </footer>
+      </main>
+    </div>
+
+    <div class="toast-container" id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+    <script is:inline>
+      const navToggle = document.getElementById('nav-toggle');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebar-overlay');
+      const accountRole = document.getElementById('account-role');
+      const logoutButton = document.getElementById('logout-button');
+
+      const session = JSON.parse(sessionStorage.getItem('famello_session_v1'));
+      accountRole.textContent = session.role === 'manager' ? 'Manager' : 'Kasir';
+
+      function setNavigationOpen(open) {
+        sidebar.classList.toggle('open', open);
+        sidebarOverlay.hidden = !open;
+        navToggle.setAttribute('aria-expanded', String(open));
+        navToggle.setAttribute('aria-label', open ? 'Tutup navigasi' : 'Buka navigasi');
+      }
+
+      navToggle.addEventListener('click', () => {
+        setNavigationOpen(!sidebar.classList.contains('open'));
+      });
+      sidebarOverlay.addEventListener('click', () => setNavigationOpen(false));
+      sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setNavigationOpen(false)));
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') setNavigationOpen(false);
+      });
+
+      logoutButton.addEventListener('click', () => {
+        sessionStorage.removeItem('famello_session_v1');
+        window.location.replace('/');
+      });
+
+      window.showToast = function (message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        toast.textContent = message;
+        document.getElementById('toast-container').appendChild(toast);
+        window.setTimeout(() => toast.remove(), 4200);
+      };
+    </script>
+  </body>
+</html>

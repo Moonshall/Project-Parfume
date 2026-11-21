@@ -1,0 +1,233 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Pembayaran" activePage="kasir">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">KASIR / PEMBAYARAN</span>
+      <h1>Pembayaran</h1>
+      <p class="subtitle">Pilih pelanggan, periksa total, lalu catat pembayaran.</p>
+    </div>
+    <a class="btn btn-secondary" href="/kasir">Kembali ke kasir</a>
+  </header>
+
+  <div class="page-body checkout-page">
+    <p class="state-message error" id="checkout-error" role="alert" hidden></p>
+    <div class="checkout-grid">
+      <div class="checkout-main">
+        <section class="card card-pad checkout-method" aria-labelledby="method-title">
+          <div class="checkout-customer" aria-labelledby="customer-title">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">PELANGGAN</span>
+                <h2 id="customer-title">Member (opsional)</h2>
+              </div>
+              <a class="btn-link" href="/member">Daftar / lihat member</a>
+            </div>
+            <div class="form-group">
+              <label for="member-select">Pilih member</label>
+              <select class="form-control" id="member-select">
+                <option value="">Non-member</option>
+                <option value="member">Member</option>
+              </select>
+            </div>
+            <div class="form-group" id="member-phone-group" hidden>
+              <label for="member-phone">Nomor HP member</label>
+              <input class="form-control" id="member-phone" type="tel" inputmode="tel" autocomplete="tel" aria-describedby="member-discount-note" />
+            </div>
+            <p class="member-discount-note" id="member-discount-note" aria-live="polite">Transaksi non-member tidak mendapat diskon.</p>
+          </div>
+
+          <span class="eyebrow">PEMBAYARAN</span>
+          <h2 class="section-title" id="method-title">Metode pembayaran</h2>
+          <div class="payment-options" role="group" aria-label="Pilih metode pembayaran" id="payment-methods">
+            <button class="payment-option" type="button" data-method="cash" aria-pressed="true">Tunai</button>
+            <button class="payment-option" type="button" data-method="qris" aria-pressed="false">QRIS</button>
+            <button class="payment-option" type="button" data-method="card" aria-pressed="false">Debit / kredit</button>
+          </div>
+          <form id="cash-section" class="stack-md">
+            <div class="quick-amounts" id="quick-amounts" aria-label="Pilihan nominal tunai"></div>
+            <div class="form-group">
+              <label for="cash-received">Uang diterima (Rp)</label>
+              <input class="form-control" id="cash-received" type="number" min="0" step="1" inputmode="numeric" required />
+            </div>
+            <div class="change-display" id="change-display" role="status" aria-live="polite" hidden></div>
+            <button class="btn btn-primary btn-wide" id="confirm-cash" type="submit" disabled>Konfirmasi pembayaran</button>
+          </form>
+          <div id="digital-section" class="stack-md" hidden>
+            <p class="simulation-note" id="digital-note"></p>
+            <button class="btn btn-primary btn-wide" id="confirm-digital" type="button">Catat pembayaran berhasil</button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="card checkout-summary" aria-labelledby="summary-title">
+        <div class="checkout-summary-head">
+          <span class="eyebrow">RINGKASAN</span>
+          <h2 id="summary-title">Pesanan</h2>
+        </div>
+        <div id="checkout-items" class="checkout-items"></div>
+        <div class="checkout-totals" aria-live="polite">
+          <div class="summary-row"><span>Subtotal</span><strong id="checkout-subtotal">Rp 0</strong></div>
+          <div class="summary-row" id="discount-row" hidden><span>Diskon member</span><strong id="checkout-discount">− Rp 0</strong></div>
+          <div class="summary-row"><span id="tax-label">PPN</span><strong id="checkout-tax">Rp 0</strong></div>
+          <div class="summary-row total"><span>Total</span><strong id="checkout-total">Rp 0</strong></div>
+        </div>
+        <p class="checkout-tax-note" id="checkout-tax-note"></p>
+      </aside>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  import {
+    createTransaction, getCart, getMembers,
+    getMemberDiscountRate, getSettings, initStore
+  } from '../lib/store.js';
+  import { escapeHtml, formatCurrency, getQuickAmounts } from '../lib/utils.js';
+
+  const error = document.getElementById('checkout-error');
+  const memberSelect = document.getElementById('member-select');
+  const memberPhone = document.getElementById('member-phone');
+  const memberPhoneGroup = document.getElementById('member-phone-group');
+  const cashForm = document.getElementById('cash-section');
+  const MEMBER_OPTION = 'member';
+  let method = 'cash';
+  let currentTotal = 0;
+
+  function showError(message) {
+    error.textContent = message;
+    error.hidden = false;
+  }
+
+  function getSelectedMember() {
+    if (memberSelect.value !== MEMBER_OPTION) return null;
+    const phone = memberPhone.value.replace(/\D/g, '');
+    if (!phone) return null;
+    return getMembers().find(member => member.phone.replace(/\D/g, '') === phone) || null;
+  }
+
+  function renderCheckout() {
+    const isMember = memberSelect.value === MEMBER_OPTION;
+    memberPhoneGroup.hidden = !isMember;
+    const cart = getCart();
+    if (cart.length === 0) {
+      window.location.replace('/kasir');
+      return;
+    }
+
+    const member = getSelectedMember();
+    const settings = getSettings();
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const discountRate = getMemberDiscountRate(member);
+    const discount = Math.round(subtotal * discountRate / 100);
+    const taxBase = subtotal - discount;
+    const tax = Math.round(taxBase * settings.taxRate / 100);
+    currentTotal = taxBase + tax;
+
+    document.getElementById('checkout-items').innerHTML = cart.map(item => `
+      <div class="checkout-item">
+        <div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.size)} · ${item.qty} × ${formatCurrency(item.price)}</small></div>
+        <strong>${formatCurrency(item.price * item.qty)}</strong>
+      </div>
+    `).join('');
+    document.getElementById('checkout-subtotal').textContent = formatCurrency(subtotal);
+    document.getElementById('discount-row').hidden = discount === 0;
+    document.getElementById('checkout-discount').textContent = `− ${formatCurrency(discount)}`;
+    document.getElementById('tax-label').textContent = `PPN (${settings.taxRate.toLocaleString('id-ID')}%)`;
+    document.getElementById('checkout-tax').textContent = formatCurrency(tax);
+    document.getElementById('checkout-total').textContent = formatCurrency(currentTotal);
+    document.getElementById('checkout-tax-note').textContent = settings.taxConfigured ? '' : 'PPN belum ditetapkan manager.';
+    document.getElementById('member-discount-note').textContent = member
+      ? `${member.name}: diskon transaksi ini ${discountRate.toLocaleString('id-ID')}%.`
+      : isMember
+        ? (memberPhone.value.trim()
+          ? 'Nomor HP belum terdaftar. Daftarkan member melalui halaman Member.'
+          : 'Masukkan nomor HP member yang sudah terdaftar.')
+        : 'Transaksi non-member tidak mendapat diskon.';
+
+    const raw = document.getElementById('cash-received').value;
+    if (raw !== '') updateCashChange();
+    document.getElementById('quick-amounts').innerHTML = getQuickAmounts(currentTotal).map(amount =>
+      `<button class="quick-amount" type="button" data-amount="${amount}">${formatCurrency(amount)}</button>`
+    ).join('');
+  }
+
+  function showPaymentMethod(nextMethod) {
+    method = nextMethod;
+    document.querySelectorAll('.payment-option').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.method === method));
+    });
+    const isCash = method === 'cash';
+    cashForm.hidden = !isCash;
+    document.getElementById('digital-section').hidden = isCash;
+    document.getElementById('digital-note').textContent = method === 'qris'
+      ? 'QRIS dicatat sebagai simulasi lokal.'
+      : 'Debit / kredit dicatat sebagai simulasi lokal.';
+  }
+
+  function updateCashChange() {
+    const raw = document.getElementById('cash-received').value;
+    const received = raw === '' ? 0 : Number(raw);
+    const enough = Number.isSafeInteger(received) && received >= currentTotal;
+    const display = document.getElementById('change-display');
+    document.getElementById('confirm-cash').disabled = !enough;
+    if (raw === '') {
+      display.hidden = true;
+      return;
+    }
+    display.hidden = false;
+    display.className = `change-display ${enough ? 'success' : 'error'}`;
+    display.textContent = enough
+      ? `Kembalian ${formatCurrency(received - currentTotal)}`
+      : `Uang kurang ${formatCurrency(Math.max(0, currentTotal - (Number.isFinite(received) ? received : 0)))}.`;
+  }
+
+  function completePayment(cashReceived = null) {
+    if (memberSelect.value === MEMBER_OPTION && !getSelectedMember()) {
+      showError('Masukkan nomor HP member yang sudah terdaftar atau pilih Non-member.');
+      return;
+    }
+    try {
+      const transaction = createTransaction(method, cashReceived, getSelectedMember()?.id || null);
+      window.location.assign(`/struk?id=${encodeURIComponent(transaction.id)}`);
+    } catch (paymentError) {
+      showError(paymentError instanceof Error ? paymentError.message : 'Pembayaran tidak dapat disimpan.');
+    }
+  }
+
+  document.getElementById('payment-methods').addEventListener('click', event => {
+    const button = event.target.closest('button[data-method]');
+    if (button) showPaymentMethod(button.dataset.method);
+  });
+  function handleCustomerChange() {
+    document.getElementById('cash-received').value = '';
+    document.getElementById('change-display').hidden = true;
+    error.hidden = true;
+    renderCheckout();
+  }
+  memberSelect.addEventListener('change', handleCustomerChange);
+  memberPhone.addEventListener('input', handleCustomerChange);
+  document.getElementById('cash-received').addEventListener('input', updateCashChange);
+  document.getElementById('quick-amounts').addEventListener('click', event => {
+    const button = event.target.closest('button[data-amount]');
+    if (!button) return;
+    document.getElementById('cash-received').value = button.dataset.amount;
+    updateCashChange();
+  });
+  cashForm.addEventListener('submit', event => {
+    event.preventDefault();
+    completePayment(Number(document.getElementById('cash-received').value));
+  });
+  document.getElementById('confirm-digital').addEventListener('click', () => completePayment());
+
+  try {
+    initStore();
+    const cart = getCart();
+    if (cart.length === 0) window.location.replace('/kasir');
+    renderCheckout();
+  } catch (loadError) {
+    showError(loadError instanceof Error ? loadError.message : 'Data pembayaran tidak dapat dimuat.');
+  }
+</script>

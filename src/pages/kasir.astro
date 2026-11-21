@@ -1,0 +1,318 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Kasir" activePage="kasir">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">PENJUALAN</span>
+      <h1>Kasir parfum</h1>
+      <p class="subtitle">Pilih parfum dan lanjutkan ke pembayaran.</p>
+    </div>
+  </header>
+
+  <p class="state-message error page-body" id="cashier-error" role="alert" hidden></p>
+
+  <div class="catalog-layout">
+    <section class="catalog-main" aria-label="Katalog parfum">
+      <div class="catalog-toolbar">
+        <div class="search-field">
+          <label class="sr-only" for="catalog-search">Cari nama, kategori, atau ukuran parfum</label>
+          <input class="form-control" id="catalog-search" type="search" placeholder="Cari nama, ukuran, atau kategori" autocomplete="off" />
+        </div>
+        <span class="catalog-count" id="catalog-count" aria-live="polite"></span>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-tabs" id="category-tabs" aria-label="Filter kategori">
+          <button class="filter-tab" type="button" data-category="all" aria-pressed="true">Semua</button>
+          <button class="filter-tab" type="button" data-category="homme" aria-pressed="false">Homme</button>
+          <button class="filter-tab" type="button" data-category="femme" aria-pressed="false">Femme</button>
+          <button class="filter-tab" type="button" data-category="unisex" aria-pressed="false">Unisex</button>
+        </div>
+      </div>
+
+      <p class="state-message" id="catalog-loading">Memuat katalog parfum...</p>
+      <div class="product-grid" id="product-grid"></div>
+      <div class="empty-state" id="catalog-empty" hidden>
+        <strong>Parfum tidak ditemukan</strong>
+        <p>Ubah kata pencarian atau pilih kategori lain.</p>
+      </div>
+    </section>
+
+    <aside class="cart-panel" id="cart-panel" aria-label="Keranjang belanja" aria-hidden="true" inert>
+      <div class="cart-header">
+        <div>
+          <h2>Keranjang</h2>
+          <span class="cart-count" id="cart-count">0 item</span>
+        </div>
+        <div class="cart-header-actions">
+          <button class="cart-close" id="close-cart" type="button" aria-label="Tutup keranjang">×</button>
+          <button class="btn btn-secondary btn-small" id="clear-cart" type="button">Kosongkan</button>
+        </div>
+      </div>
+      <div class="cart-items" id="cart-items">
+        <p class="state-message">Memuat keranjang...</p>
+      </div>
+      <div class="empty-state cart-empty" id="cart-empty" hidden>
+        <strong>Keranjang masih kosong</strong>
+        <p>Pilih parfum dari katalog untuk memulai transaksi.</p>
+      </div>
+      <div class="cart-summary" id="cart-summary" hidden>
+        <div class="summary-row"><span>Subtotal</span><strong id="cart-subtotal">Rp 0</strong></div>
+        <div class="summary-row total"><span>Total</span><strong id="cart-total">Rp 0</strong></div>
+        <button class="btn btn-primary btn-wide" id="open-payment" type="button" disabled>Lanjut ke pembayaran</button>
+      </div>
+    </aside>
+  </div>
+
+  <button class="cart-fab" id="cart-fab" type="button" aria-controls="cart-panel" aria-expanded="false">
+    <span id="cart-fab-label">Keranjang</span>
+    <span class="cart-fab-count" id="cart-fab-count">0</span>
+  </button>
+
+</MainLayout>
+
+<script>
+  import {
+    addToCart, clearCart, getCart,
+    getProducts, initStore, removeFromCart, updateCartQty
+  } from '../lib/store.js';
+  import {
+    categoryLabels, escapeHtml, formatCurrency
+  } from '../lib/utils.js';
+
+  const grid = document.getElementById('product-grid');
+  const errorEl = document.getElementById('cashier-error');
+  const catalogLoading = document.getElementById('catalog-loading');
+  const catalogEmpty = document.getElementById('catalog-empty');
+  const cartItemsEl = document.getElementById('cart-items');
+  const cartEmpty = document.getElementById('cart-empty');
+  const cartSummary = document.getElementById('cart-summary');
+  const cartPanel = document.getElementById('cart-panel');
+  const cartFab = document.getElementById('cart-fab');
+  let category = 'all';
+  let search = '';
+  let currentProducts = [];
+
+  function showFatalError(error) {
+    errorEl.hidden = false;
+    errorEl.textContent = error instanceof Error ? error.message : 'Data kasir tidak dapat dimuat. Muat ulang halaman atau periksa penyimpanan browser.';
+    catalogLoading.hidden = true;
+    grid.hidden = true;
+    document.getElementById('open-payment').disabled = true;
+  }
+
+  function renderProducts() {
+    const query = search.toLocaleLowerCase('id-ID');
+    const filtered = currentProducts.filter(product => {
+      const matchesCategory = category === 'all' || product.category === category;
+      const content = `${product.name} ${product.size} ${product.category} ${product.id}`.toLocaleLowerCase('id-ID');
+      return matchesCategory && content.includes(query);
+    });
+
+    document.getElementById('catalog-count').textContent = `${filtered.length} varian`;
+    catalogEmpty.hidden = filtered.length !== 0;
+    grid.hidden = filtered.length === 0;
+    grid.innerHTML = filtered.map(product => {
+      const stockStatus = product.stock === 0
+        ? '<span class="stock-stamp out">Stok habis</span>'
+        : product.stock <= 5
+          ? `<span class="stock-stamp low">Sisa ${product.stock}</span>`
+          : '';
+      const photo = product.image
+        ? `<img src="${escapeHtml(product.image)}" alt="Foto parfum ${escapeHtml(product.name)} ukuran ${escapeHtml(product.size)}" width="800" height="600" loading="lazy" />`
+        : '';
+      return `
+        <article class="product-card">
+          <div class="product-photo">
+            ${photo}
+            <span class="photo-fallback" ${product.image ? 'hidden' : ''}>FAMELLO</span>
+            ${stockStatus}
+          </div>
+          <div class="product-details">
+            <span class="product-category">${escapeHtml(categoryLabels[product.category] || product.category)}</span>
+            <h2 class="product-name">${escapeHtml(product.name)}</h2>
+            <span class="product-size">${escapeHtml(product.size)} · Stok ${product.stock}</span>
+            <strong class="product-price">${formatCurrency(product.price)}</strong>
+            <button class="btn btn-secondary btn-wide" type="button" data-add="${escapeHtml(product.id)}" ${product.stock < 1 ? 'disabled' : ''} aria-label="Tambah ${escapeHtml(product.name)} ukuran ${escapeHtml(product.size)} ke keranjang">
+              ${product.stock < 1 ? 'Tidak tersedia' : 'Tambah ke keranjang'}
+            </button>
+          </div>
+        </article>`;
+    }).join('');
+
+    grid.querySelectorAll('.product-photo img').forEach(image => {
+      image.addEventListener('error', () => {
+        image.hidden = true;
+        image.nextElementSibling.hidden = false;
+      }, { once: true });
+    });
+  }
+
+  function renderCart() {
+    const cart = getCart();
+    const count = cart.reduce((sum, item) => sum + item.qty, 0);
+    document.getElementById('cart-count').textContent = `${count} item`;
+    document.getElementById('cart-fab-count').textContent = String(count);
+    cartItemsEl.innerHTML = '';
+    cartEmpty.hidden = cart.length !== 0;
+    cartSummary.hidden = cart.length === 0;
+    document.getElementById('open-payment').disabled = cart.length === 0;
+
+    if (cart.length > 0) {
+      cartItemsEl.innerHTML = cart.map(item => `
+        <div class="cart-line">
+          <div class="cart-line-main">
+            <strong class="cart-line-name">${escapeHtml(item.name)}</strong>
+            <span class="cart-line-meta">${escapeHtml(item.size)} · ${formatCurrency(item.price)} per item</span>
+          </div>
+          <strong class="cart-line-subtotal">${formatCurrency(item.price * item.qty)}</strong>
+          <div class="cart-line-controls" aria-label="Jumlah ${escapeHtml(item.name)}">
+            <button class="qty-button" type="button" data-quantity="-1" data-id="${escapeHtml(item.productId)}" aria-label="Kurangi ${escapeHtml(item.name)}">−</button>
+            <span class="qty-value" aria-live="polite">${item.qty}</span>
+            <button class="qty-button" type="button" data-quantity="1" data-id="${escapeHtml(item.productId)}" aria-label="Tambah ${escapeHtml(item.name)}">+</button>
+            <button class="remove-item" type="button" data-remove="${escapeHtml(item.productId)}" aria-label="Hapus ${escapeHtml(item.name)} dari keranjang">Hapus</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    document.getElementById('cart-subtotal').textContent = formatCurrency(total);
+    document.getElementById('cart-total').textContent = formatCurrency(total);
+    renderProducts();
+  }
+
+  function refresh() {
+    currentProducts = getProducts();
+    renderProducts();
+    renderCart();
+    errorEl.hidden = true;
+  }
+
+  function setCartOpen(open) {
+    const mobile = window.matchMedia('(max-width: 980px)').matches;
+    cartPanel.classList.toggle('open', open && mobile);
+    cartFab.setAttribute('aria-expanded', String(open && mobile));
+    cartFab.setAttribute('aria-label', open && mobile ? 'Tutup keranjang' : 'Buka keranjang');
+    cartFab.hidden = mobile && open;
+    document.getElementById('cart-fab-label').textContent = open && mobile ? 'Tutup keranjang' : 'Keranjang';
+    cartPanel.toggleAttribute('inert', mobile && !open);
+    cartPanel.setAttribute('aria-hidden', String(mobile && !open));
+  }
+
+  function syncCartForViewport() {
+    const mobile = window.matchMedia('(max-width: 980px)').matches;
+    if (!mobile) {
+      cartPanel.classList.remove('open');
+      cartPanel.removeAttribute('inert');
+      cartPanel.setAttribute('aria-hidden', 'false');
+      cartFab.setAttribute('aria-expanded', 'false');
+      cartFab.hidden = false;
+      document.getElementById('cart-fab-label').textContent = 'Keranjang';
+      return;
+    }
+    setCartOpen(cartPanel.classList.contains('open'));
+  }
+
+  function openPayment() {
+    try {
+      if (getCart().length === 0) {
+        window.showToast('Pilih parfum sebelum membuka pembayaran.', 'warning');
+        return;
+      }
+      window.location.assign('/pembayaran');
+    } catch (error) {
+      showFatalError(error);
+      window.showToast(error instanceof Error ? error.message : 'Pembayaran tidak dapat dibuka.', 'error');
+    }
+  }
+
+  document.getElementById('category-tabs').addEventListener('click', event => {
+    const button = event.target.closest('button[data-category]');
+    if (!button) return;
+    category = button.dataset.category;
+    document.querySelectorAll('#category-tabs button').forEach(tab => {
+      tab.setAttribute('aria-pressed', String(tab === button));
+    });
+    renderProducts();
+  });
+
+  document.getElementById('catalog-search').addEventListener('input', event => {
+    search = event.target.value.trim();
+    renderProducts();
+  });
+
+  grid.addEventListener('click', event => {
+    const button = event.target.closest('button[data-add]');
+    if (!button) return;
+    try {
+      if (!addToCart(button.dataset.add)) {
+        window.showToast('Stok produk tidak tersedia atau sudah habis.', 'warning');
+        return;
+      }
+      renderCart();
+      window.showToast('Parfum ditambahkan ke keranjang.', 'success');
+    } catch (error) {
+      window.showToast(error instanceof Error ? error.message : 'Produk tidak dapat ditambahkan.', 'error');
+    }
+  });
+
+  cartItemsEl.addEventListener('click', event => {
+    const quantityButton = event.target.closest('button[data-quantity]');
+    const removeButton = event.target.closest('button[data-remove]');
+    try {
+      if (quantityButton) {
+        const item = getCart().find(entry => entry.productId === quantityButton.dataset.id);
+        if (!item) return;
+        const updated = updateCartQty(item.productId, item.qty + Number(quantityButton.dataset.quantity));
+        if (!updated) window.showToast('Jumlah melebihi stok yang tersedia.', 'warning');
+        refresh();
+      } else if (removeButton) {
+        removeFromCart(removeButton.dataset.remove);
+        refresh();
+      }
+    } catch (error) {
+      window.showToast(error instanceof Error ? error.message : 'Keranjang tidak dapat diperbarui.', 'error');
+    }
+  });
+
+  document.getElementById('clear-cart').addEventListener('click', () => {
+    try {
+      if (getCart().length === 0) return;
+      if (!window.confirm('Kosongkan semua parfum dari keranjang?')) return;
+      clearCart();
+      refresh();
+    } catch (error) {
+      window.showToast(error instanceof Error ? error.message : 'Keranjang tidak dapat dikosongkan.', 'error');
+    }
+  });
+
+  document.getElementById('open-payment').addEventListener('click', openPayment);
+  document.getElementById('close-cart').addEventListener('click', () => {
+    setCartOpen(false);
+    cartFab.focus();
+  });
+  document.getElementById('cart-fab').addEventListener('click', () => {
+    const open = !cartPanel.classList.contains('open');
+    setCartOpen(open);
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && cartPanel.classList.contains('open')) {
+      setCartOpen(false);
+      cartFab.focus();
+    }
+  });
+
+  try {
+    initStore();
+    catalogLoading.hidden = true;
+    syncCartForViewport();
+    window.matchMedia('(max-width: 980px)').addEventListener('change', syncCartForViewport);
+    refresh();
+  } catch (error) {
+    showFatalError(error);
+  }
+</script>
