@@ -9,7 +9,7 @@
       "price": 950000,
       "stock": 15,
       "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
-      "description": "Oud gelap, lada hitam, dan kulit berpadu dalam aroma yang hangat.",
+      "description": "Aroma oud, lada hitam, bergamot, dan leather.",
       "notes": ["Bergamot", "Black Pepper", "Oud", "Leather"]
     },
     {
@@ -20,7 +20,7 @@
       "price": 650000,
       "stock": 22,
       "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
-      "description": "Oud gelap, lada hitam, dan kulit berpadu dalam aroma yang hangat.",
+      "description": "Aroma oud, lada hitam, bergamot, dan leather.",
       "notes": ["Bergamot", "Black Pepper", "Oud", "Leather"]
     },
     {
@@ -31,7 +31,7 @@
       "price": 850000,
       "stock": 18,
       "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
-      "description": "Mawar segar dan peony dengan akhir musk yang lembut.",
+      "description": "Mawar, peony, musk, dan vanilla.",
       "notes": ["Rose", "Peony", "Musk", "Vanilla"]
     },
     {
@@ -42,7 +42,7 @@
       "price": 580000,
       "stock": 25,
       "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
-      "description": "Mawar segar dan peony dengan akhir musk yang lembut.",
+      "description": "Mawar, peony, musk, dan vanilla.",
       "notes": ["Rose", "Peony", "Musk", "Vanilla"]
     },
     {
@@ -53,7 +53,7 @@
       "price": 1350000,
       "stock": 8,
       "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
-      "description": "Oud pilihan dengan kapulaga, mawar, dan amber.",
+      "description": "Oud, kapulaga, mawar, dan amber.",
       "notes": ["Oud", "Cardamom", "Rose", "Amber"]
     },
     {
@@ -64,7 +64,7 @@
       "price": 890000,
       "stock": 13,
       "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
-      "description": "Oud pilihan dengan kapulaga, mawar, dan amber.",
+      "description": "Oud, kapulaga, mawar, dan amber.",
       "notes": ["Oud", "Cardamom", "Rose", "Amber"]
     },
     {
@@ -75,7 +75,7 @@
       "price": 880000,
       "stock": 12,
       "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
-      "description": "Amber dan kayu cedar dengan jejak rempah yang tenang.",
+      "description": "Amber, cinnamon, tonka bean, dan cedarwood.",
       "notes": ["Amber", "Cinnamon", "Tonka Bean", "Cedarwood"]
     },
     {
@@ -86,7 +86,7 @@
       "price": 610000,
       "stock": 17,
       "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
-      "description": "Amber dan kayu cedar dengan jejak rempah yang tenang.",
+      "description": "Amber, cinnamon, tonka bean, dan cedarwood.",
       "notes": ["Amber", "Cinnamon", "Tonka Bean", "Cedarwood"]
     },
     {
@@ -97,7 +97,7 @@
       "price": 720000,
       "stock": 30,
       "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
-      "description": "Teh putih, bergamot, dan udara laut yang bersih.",
+      "description": "Sea salt, bergamot, white tea, dan driftwood.",
       "notes": ["Sea Salt", "Bergamot", "White Tea", "Driftwood"]
     },
     {
@@ -108,7 +108,7 @@
       "price": 480000,
       "stock": 35,
       "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
-      "description": "Teh putih, bergamot, dan udara laut yang bersih.",
+      "description": "Sea salt, bergamot, white tea, dan driftwood.",
       "notes": ["Sea Salt", "Bergamot", "White Tea", "Driftwood"]
     },
     {
@@ -119,7 +119,7 @@
       "price": 600000,
       "stock": 24,
       "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
-      "description": "Freesia dan daun teh hijau dengan sentuhan musk putih.",
+      "description": "Freesia, green tea, lily, dan white musk.",
       "notes": ["Freesia", "Green Tea", "Lily", "White Musk"]
     },
     {
@@ -130,7 +130,7 @@
       "price": 520000,
       "stock": 28,
       "image": "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80",
-      "description": "Iris, melati, dan musk kasmir dalam aroma lembut.",
+      "description": "Iris, jasmine, velvet musk, dan cashmere.",
       "notes": ["Iris", "Jasmine", "Velvet Musk", "Cashmere"]
     }
   ],
