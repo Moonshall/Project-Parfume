@@ -25,21 +25,21 @@ import '../styles/global.css';
         </a>
 
         <div class="login-heading">
-          <span class="eyebrow">RUANG KERJA TOKO</span>
-          <h1 id="login-title">Selamat datang.</h1>
-          <p>Masukkan username dan password untuk masuk.</p>
+          <span class="eyebrow">KASIR TOKO</span>
+          <h1 id="login-title">Masuk ke kasir.</h1>
+          <p>Masukkan nama pengguna dan kata sandi.</p>
         </div>
 
         <form class="login-form" id="login-form">
           <div class="form-group">
-            <label for="username">Username</label>
+            <label for="username">Nama pengguna</label>
             <input class="form-control" id="username" name="username" type="text" autocomplete="username" required />
           </div>
           <div class="form-group">
-            <label for="password">Password</label>
+            <label for="password">Kata sandi</label>
             <div class="password-control">
               <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required />
-              <button class="password-toggle" id="password-toggle" type="button" aria-controls="password" aria-label="Tampilkan password" aria-pressed="false">
+              <button class="password-toggle" id="password-toggle" type="button" aria-controls="password" aria-label="Tampilkan kata sandi" aria-pressed="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
                   <circle cx="12" cy="12" r="2.5" />
@@ -51,14 +51,14 @@ import '../styles/global.css';
           <button class="btn btn-primary btn-wide login-submit" id="login-submit" type="submit">Masuk ke FAMELLO</button>
         </form>
 
-        <p class="login-notice">Login demo lokal. Data tersimpan di browser ini dan akun tidak melindungi data dari akses langsung.</p>
+        <p class="login-notice">Mode demo. Data tersimpan di browser ini; login tidak mengamankan data dari akses langsung.</p>
       </section>
 
-      <aside class="login-showcase" aria-label="FAMELLO Parfum Studio">
+      <aside class="login-showcase" aria-label="Sistem kasir FAMELLO">
         <div class="showcase-badge"><span aria-hidden="true">✦</span> FAMELLO STUDIO</div>
         <div class="showcase-copy">
-          <span class="eyebrow">SCENT, WITH INTENTION</span>
-          <h2>Ritual kecil.<br />Kesan yang tinggal.</h2>
+          <span class="eyebrow">PENJUALAN</span>
+          <h2>Kasir FAMELLO</h2>
         </div>
         <div class="showcase-vial" aria-hidden="true">
           <div class="showcase-vial-cap"></div>
@@ -66,9 +66,9 @@ import '../styles/global.css';
           <div class="showcase-vial-body"><span>FAMELLO</span><small>EAU DE PARFUM</small><i></i></div>
           <div class="showcase-vial-shadow"></div>
         </div>
-        <span class="showcase-caption">PARFUM STUDIO · A QUIET SIGNATURE</span>
+        <span class="showcase-caption">PRODUK · MEMBER · TRANSAKSI</span>
       </aside>
-      <footer class="login-footer"><span>FAMELLO STUDIO</span><span>Ruang kerja toko</span></footer>
+      <footer class="login-footer"><span>FAMELLO STUDIO</span><span>Sistem kasir toko</span></footer>
     </main>
 
     <script>
@@ -88,7 +88,7 @@ import '../styles/global.css';
         const reveal = password.type === 'password';
         password.type = reveal ? 'text' : 'password';
         passwordToggle.setAttribute('aria-pressed', String(reveal));
-        passwordToggle.setAttribute('aria-label', reveal ? 'Sembunyikan password' : 'Tampilkan password');
+        passwordToggle.setAttribute('aria-label', reveal ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
         passwordToggle.classList.toggle('revealed', reveal);
       });
 
@@ -111,7 +111,7 @@ import '../styles/global.css';
           try {
             const role = signIn(username, enteredPassword);
             if (!role) {
-              error.textContent = 'Username atau password tidak sesuai.';
+              error.textContent = 'Nama pengguna atau kata sandi tidak sesuai.';
               error.hidden = false;
               password.focus();
               resetSubmitState();
