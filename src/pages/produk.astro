@@ -68,7 +68,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="flex-between">
         <div>
           <h2 class="section-title" id="data-title">Data kasir di perangkat ini</h2>
-          <p class="text-muted text-small">Reset mengembalikan katalog contoh dan menghapus riwayat transaksi lokal.</p>
+          <p class="text-muted text-small">Reset menghapus riwayat transaksi dan mengembalikan produk contoh.</p>
         </div>
         <button class="btn btn-danger btn-small" id="reset-data" type="button">Reset data contoh</button>
       </div>
@@ -116,7 +116,7 @@ import MainLayout from '../layouts/MainLayout.astro';
           <div class="form-group">
             <label for="product-image">URL foto produk</label>
             <input class="form-control" id="product-image" type="url" placeholder="https://..." autocomplete="url" />
-            <small class="form-help">Kosongkan bila ingin memakai bidang foto cadangan.</small>
+            <small class="form-help">Opsional. Foto cadangan dipakai jika kolom ini kosong.</small>
           </div>
           <div class="form-group">
             <label for="product-description">Deskripsi singkat</label>
