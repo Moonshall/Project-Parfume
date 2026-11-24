@@ -248,11 +248,17 @@ import MainLayout from '../layouts/MainLayout.astro';
     const button = event.target.closest('button[data-add]');
     if (!button) return;
     try {
-      if (!addToCart(button.dataset.add)) {
+      const productId = button.dataset.add;
+      if (!addToCart(productId)) {
         window.showToast('Stok produk tidak tersedia atau sudah habis.', 'warning');
         return;
       }
       renderCart();
+      const addedButton = grid.querySelector(`button[data-add="${CSS.escape(productId)}"]`);
+      if (addedButton) {
+        addedButton.classList.add('is-added');
+        window.setTimeout(() => addedButton.classList.remove('is-added'), 550);
+      }
       window.showToast('Parfum ditambahkan ke keranjang.', 'success');
     } catch (error) {
       window.showToast(error instanceof Error ? error.message : 'Produk tidak dapat ditambahkan.', 'error');
