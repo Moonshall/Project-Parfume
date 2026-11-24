@@ -7,7 +7,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     <div>
       <span class="eyebrow">PELANGGAN</span>
       <h1>Member</h1>
-      <p class="subtitle">Kelola profil dan progres diskon pelanggan.</p>
+      <p class="subtitle">Kelola data dan diskon member.</p>
     </div>
     <a class="btn btn-primary" href="#form-member">Daftarkan member</a>
   </header>
@@ -59,7 +59,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       </div>
       <div class="empty-state" id="member-empty" hidden>
         <strong id="member-empty-title">Belum ada member</strong>
-        <p id="member-empty-copy">Member yang didaftarkan akan tercatat di sini.</p>
+        <p id="member-empty-copy">Belum ada data member.</p>
       </div>
     </section>
   </div>
@@ -102,8 +102,8 @@ import MainLayout from '../layouts/MainLayout.astro';
       empty.hidden = filtered.length !== 0;
       document.getElementById('member-empty-title').textContent = members.length === 0 ? 'Belum ada member' : 'Member tidak ditemukan';
       document.getElementById('member-empty-copy').textContent = members.length === 0
-        ? 'Member yang didaftarkan akan tercatat di sini.'
-        : 'Coba kata pencarian lain.';
+        ? 'Belum ada data member.'
+        : 'Coba kata kunci lain.';
       table.innerHTML = filtered.map(member => `
         <tr>
           <td data-label="Nama"><strong>${escapeHtml(member.name)}</strong></td>
