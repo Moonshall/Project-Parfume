@@ -7,7 +7,7 @@ import '../styles/global.css';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f5f1e8" />
+    <meta name="theme-color" content="#f7f4ed" />
     <title>Masuk | FAMELLO STUDIO</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,15 +17,6 @@ import '../styles/global.css';
     />
   </head>
   <body class="login-page">
-    <div class="ambient-scene" aria-hidden="true">
-      <div class="ambient-vial">
-        <div class="ambient-cap"></div>
-        <div class="ambient-neck"></div>
-        <div class="ambient-body"><span>FAMELLO</span><i></i></div>
-      </div>
-      <div class="ambient-shadow"></div>
-    </div>
-
     <main class="login-main">
       <section class="login-panel" aria-labelledby="login-title">
         <a class="login-brand" href="/" aria-label="FAMELLO STUDIO">
@@ -46,15 +37,38 @@ import '../styles/global.css';
           </div>
           <div class="form-group">
             <label for="password">Password</label>
-            <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required />
+            <div class="password-control">
+              <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required />
+              <button class="password-toggle" id="password-toggle" type="button" aria-controls="password" aria-label="Tampilkan password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </svg>
+              </button>
+            </div>
           </div>
           <p class="login-error" id="login-error" role="alert" hidden></p>
-          <button class="btn btn-primary btn-wide login-submit" type="submit">Masuk ke FAMELLO</button>
+          <button class="btn btn-primary btn-wide login-submit" id="login-submit" type="submit">Masuk ke FAMELLO</button>
         </form>
 
         <p class="login-notice">Login demo lokal. Data tersimpan di browser ini dan akun tidak melindungi data dari akses langsung.</p>
       </section>
-      <footer class="login-footer"><span>FAMELLO STUDIO</span></footer>
+
+      <aside class="login-showcase" aria-label="FAMELLO Parfum Studio">
+        <div class="showcase-badge"><span aria-hidden="true">✦</span> FAMELLO STUDIO</div>
+        <div class="showcase-copy">
+          <span class="eyebrow">SCENT, WITH INTENTION</span>
+          <h2>Ritual kecil.<br />Kesan yang tinggal.</h2>
+        </div>
+        <div class="showcase-vial" aria-hidden="true">
+          <div class="showcase-vial-cap"></div>
+          <div class="showcase-vial-neck"></div>
+          <div class="showcase-vial-body"><span>FAMELLO</span><small>EAU DE PARFUM</small><i></i></div>
+          <div class="showcase-vial-shadow"></div>
+        </div>
+        <span class="showcase-caption">PARFUM STUDIO · A QUIET SIGNATURE</span>
+      </aside>
+      <footer class="login-footer"><span>FAMELLO STUDIO</span><span>Ruang kerja toko</span></footer>
     </main>
 
     <script>
@@ -65,28 +79,53 @@ import '../styles/global.css';
 
       const form = document.getElementById('login-form');
       const error = document.getElementById('login-error');
+      const password = document.getElementById('password');
+      const passwordToggle = document.getElementById('password-toggle');
+      const submitButton = document.getElementById('login-submit');
+      const defaultSubmitLabel = submitButton.textContent;
+
+      passwordToggle.addEventListener('click', () => {
+        const reveal = password.type === 'password';
+        password.type = reveal ? 'text' : 'password';
+        passwordToggle.setAttribute('aria-pressed', String(reveal));
+        passwordToggle.setAttribute('aria-label', reveal ? 'Sembunyikan password' : 'Tampilkan password');
+        passwordToggle.classList.toggle('revealed', reveal);
+      });
+
+      function resetSubmitState() {
+        submitButton.disabled = false;
+        submitButton.removeAttribute('aria-busy');
+        submitButton.textContent = defaultSubmitLabel;
+      }
 
       form.addEventListener('submit', event => {
         event.preventDefault();
         const formData = new FormData(form);
         const username = String(formData.get('username') || '');
-        const password = String(formData.get('password') || '');
+        const enteredPassword = String(formData.get('password') || '');
 
-        try {
-          const role = signIn(username, password);
-          if (!role) {
-            error.textContent = 'Username atau password tidak sesuai.';
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
+        submitButton.textContent = 'Memeriksa...';
+        window.requestAnimationFrame(() => {
+          try {
+            const role = signIn(username, enteredPassword);
+            if (!role) {
+              error.textContent = 'Username atau password tidak sesuai.';
+              error.hidden = false;
+              password.focus();
+              resetSubmitState();
+              return;
+            }
+            window.location.assign(getHomeForRole(role));
+          } catch (loginError) {
+            error.textContent = loginError instanceof Error
+              ? `Login gagal: ${loginError.message}`
+              : 'Login gagal. Periksa pengaturan penyimpanan browser.';
             error.hidden = false;
-            document.getElementById('password').focus();
-            return;
+            resetSubmitState();
           }
-          window.location.assign(getHomeForRole(role));
-        } catch (loginError) {
-          error.textContent = loginError instanceof Error
-            ? `Login gagal: ${loginError.message}`
-            : 'Login gagal. Periksa pengaturan penyimpanan browser.';
-          error.hidden = false;
-        }
+        });
       });
 
       form.addEventListener('input', () => {
