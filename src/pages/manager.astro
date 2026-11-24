@@ -22,27 +22,27 @@ import MainLayout from '../layouts/MainLayout.astro';
       <article class="stat-card featured">
         <span class="stat-label">Omzet hari ini</span>
         <strong class="stat-value" id="manager-sales-today">Rp 0</strong>
-        <span class="stat-footnote">Total transaksi hari ini</span>
+        <span class="stat-footnote">Penjualan tercatat hari ini</span>
       </article>
       <article class="stat-card">
         <span class="stat-label">Omzet bulan ini</span>
         <strong class="stat-value" id="manager-sales-month">Rp 0</strong>
-        <span class="stat-footnote">Pendapatan bruto tercatat</span>
+        <span class="stat-footnote">Penjualan tercatat bulan ini</span>
       </article>
       <article class="stat-card">
         <span class="stat-label">Transaksi hari ini</span>
         <strong class="stat-value" id="manager-transaction-count">0</strong>
-        <span class="stat-footnote">Transaksi tersimpan</span>
+        <span class="stat-footnote">Jumlah transaksi hari ini</span>
       </article>
       <article class="stat-card">
         <span class="stat-label">Jumlah member</span>
         <strong class="stat-value" id="manager-member-count">0</strong>
-        <span class="stat-footnote">Terdaftar di perangkat ini</span>
+        <span class="stat-footnote">Data tersimpan di kasir ini</span>
       </article>
       <article class="stat-card">
         <span class="stat-label">Unit stok</span>
         <strong class="stat-value" id="manager-stock-count">0</strong>
-        <span class="stat-footnote">Di seluruh varian</span>
+        <span class="stat-footnote">Total stok semua produk</span>
       </article>
     </section>
 
@@ -50,7 +50,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div>
         <span class="eyebrow">PENGATURAN TRANSAKSI</span>
         <h2 id="manager-tax-title">PPN</h2>
-        <p>Tarif ini dipakai untuk pembayaran berikutnya.</p>
+        <p>Tarif berlaku untuk transaksi berikutnya.</p>
       </div>
       <form class="manager-tax-form" id="tax-form">
         <div class="form-group">
@@ -73,7 +73,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         <div class="section-heading">
           <div>
             <h2 id="manager-recent-title">Penjualan terbaru</h2>
-            <p>Catatan transaksi yang paling baru.</p>
+            <p>Transaksi terakhir yang tersimpan.</p>
           </div>
           <a class="btn-link" href="/riwayat">Semua transaksi</a>
         </div>
@@ -98,7 +98,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="section-heading">
         <div>
           <h2 id="manager-members-title">Member teratas</h2>
-          <p>Ringkasan belanja dan diskon berikutnya.</p>
+          <p>Diurutkan berdasarkan jumlah transaksi.</p>
         </div>
         <a class="btn-link" href="/member">Lihat semua</a>
       </div>
@@ -178,8 +178,8 @@ import MainLayout from '../layouts/MainLayout.astro';
     if (lowStockProducts.length === 0) {
       stockContainer.innerHTML = `
         <div class="empty-state">
-          <strong>Stok masih tersedia</strong>
-          <p>Belum ada varian yang perlu segera diisi ulang.</p>
+          <strong>Stok aman</strong>
+          <p>Tidak ada produk yang perlu diisi ulang.</p>
         </div>`;
     } else {
       stockContainer.innerHTML = lowStockProducts.map(product => `
