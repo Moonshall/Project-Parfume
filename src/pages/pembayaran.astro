@@ -7,7 +7,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     <div>
       <span class="eyebrow">KASIR / PEMBAYARAN</span>
       <h1>Pembayaran</h1>
-      <p class="subtitle">Pilih pelanggan, periksa total, lalu catat pembayaran.</p>
+      <p class="subtitle">Pilih member dan metode pembayaran.</p>
     </div>
     <a class="btn btn-secondary" href="/kasir">Kembali ke kasir</a>
   </header>
@@ -23,7 +23,7 @@ import MainLayout from '../layouts/MainLayout.astro';
                 <span class="eyebrow">PELANGGAN</span>
                 <h2 id="customer-title">Member (opsional)</h2>
               </div>
-              <a class="btn-link" href="/member">Daftar / lihat member</a>
+              <a class="btn-link" href="/member">Kelola member</a>
             </div>
             <div class="form-group">
               <label for="member-select">Pilih member</label>
@@ -138,7 +138,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     document.getElementById('tax-label').textContent = `PPN (${settings.taxRate.toLocaleString('id-ID')}%)`;
     document.getElementById('checkout-tax').textContent = formatCurrency(tax);
     document.getElementById('checkout-total').textContent = formatCurrency(currentTotal);
-    document.getElementById('checkout-tax-note').textContent = settings.taxConfigured ? '' : 'PPN belum ditetapkan manager.';
+    document.getElementById('checkout-tax-note').textContent = settings.taxConfigured ? ''     : 'Tarif PPN belum diatur.';
     document.getElementById('member-discount-note').textContent = member
       ? `${member.name}: diskon transaksi ini ${discountRate.toLocaleString('id-ID')}%.`
       : isMember
