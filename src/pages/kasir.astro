@@ -7,7 +7,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     <div>
       <span class="eyebrow">PENJUALAN</span>
       <h1>Kasir parfum</h1>
-      <p class="subtitle">Pilih parfum dan lanjutkan ke pembayaran.</p>
+      <p class="subtitle">Cari parfum, lalu tambahkan ke keranjang.</p>
     </div>
   </header>
 
@@ -36,7 +36,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <div class="product-grid" id="product-grid"></div>
       <div class="empty-state" id="catalog-empty" hidden>
         <strong>Parfum tidak ditemukan</strong>
-        <p>Ubah kata pencarian atau pilih kategori lain.</p>
+        <p>Coba kata kunci atau kategori lain.</p>
       </div>
     </section>
 
@@ -55,8 +55,8 @@ import MainLayout from '../layouts/MainLayout.astro';
         <p class="state-message">Memuat keranjang...</p>
       </div>
       <div class="empty-state cart-empty" id="cart-empty" hidden>
-        <strong>Keranjang masih kosong</strong>
-        <p>Pilih parfum dari katalog untuk memulai transaksi.</p>
+        <strong>Keranjang kosong</strong>
+        <p>Tambahkan parfum dari katalog.</p>
       </div>
       <div class="cart-summary" id="cart-summary" hidden>
         <div class="summary-row"><span>Subtotal</span><strong id="cart-subtotal">Rp 0</strong></div>
