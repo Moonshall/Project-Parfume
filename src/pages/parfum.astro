@@ -1,0 +1,77 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Detail parfum" activePage="kasir">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">DETAIL PRODUK</span>
+      <h1>Informasi parfum</h1>
+      <p class="subtitle">Detail nama, harga, dan deskripsi produk.</p>
+    </div>
+    <div class="page-header-actions">
+      <a class="btn btn-secondary" href="/kasir">Kembali ke katalog</a>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <p class="state-message error" id="perfume-error" role="alert" hidden></p>
+    <p class="state-message" id="perfume-loading">Memuat detail parfum...</p>
+    <article class="card perfume-detail" id="perfume-detail" hidden></article>
+  </div>
+</MainLayout>
+
+<script>
+  import { getProductById, initStore } from '../lib/store.js';
+  import { categoryLabels, escapeHtml, formatCurrency } from '../lib/utils.js';
+
+  const detail = document.getElementById('perfume-detail') as HTMLElement;
+  const loading = document.getElementById('perfume-loading') as HTMLElement;
+  const error = document.getElementById('perfume-error') as HTMLElement;
+
+  try {
+    initStore();
+    const productId = new URLSearchParams(window.location.search).get('id');
+    const product = productId ? getProductById(productId) : null;
+
+    if (!product) {
+      error.textContent = 'Parfum tidak ditemukan. Produk mungkin sudah dihapus dari katalog.';
+      error.hidden = false;
+    } else {
+      const image = product.image
+        ? `<img class="perfume-detail-image" src="${escapeHtml(product.image)}" alt="Foto parfum ${escapeHtml(product.name)} ukuran ${escapeHtml(product.size)}" />`
+        : '<div class="perfume-detail-fallback" aria-hidden="true">FAMELLO</div>';
+      detail.innerHTML = `
+        <div class="perfume-detail-photo">
+          ${image}
+        </div>
+        <div class="perfume-detail-copy">
+          <span class="product-category">${escapeHtml((categoryLabels as Record<string, string>)[product.category] || product.category)}</span>
+          <h2>${escapeHtml(product.name)}</h2>
+          <p class="perfume-detail-meta">${escapeHtml(product.size)} · ${product.stock > 0 ? `Stok ${product.stock}` : 'Stok habis'}</p>
+          <strong class="perfume-detail-price">${formatCurrency(product.price)}</strong>
+          <div class="perfume-description">
+            <h3>Deskripsi produk</h3>
+            <p>${product.description ? escapeHtml(product.description) : 'Belum ada deskripsi untuk parfum ini.'}</p>
+          </div>
+        </div>`;
+      const imageElement = detail.querySelector<HTMLImageElement>('.perfume-detail-image');
+      imageElement?.addEventListener('error', () => {
+        const fallback = document.createElement('div');
+        fallback.className = 'perfume-detail-fallback';
+        fallback.setAttribute('aria-hidden', 'true');
+        fallback.textContent = 'FAMELLO';
+        imageElement.replaceWith(fallback);
+      }, { once: true });
+      detail.hidden = false;
+    }
+
+    loading.hidden = true;
+  } catch (loadError) {
+    loading.hidden = true;
+    error.textContent = loadError instanceof Error
+      ? loadError.message
+      : 'Detail parfum tidak dapat dimuat. Periksa penyimpanan browser.';
+    error.hidden = false;
+  }
+</script>
