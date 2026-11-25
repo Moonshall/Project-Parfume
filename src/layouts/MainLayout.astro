@@ -34,7 +34,7 @@ const navItems = [
             return;
           }
           document.documentElement.classList.add(`role-${role}`);
-          const cashierPaths = ['/kasir', '/member', '/pembayaran', '/struk'];
+          const cashierPaths = ['/kasir', '/member', '/pembayaran', '/struk', '/parfum'];
           if (role === 'cashier' && !cashierPaths.includes(window.location.pathname)) {
             window.location.replace('/kasir');
           }
