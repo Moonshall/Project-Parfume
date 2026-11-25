@@ -82,25 +82,26 @@ import MainLayout from '../layouts/MainLayout.astro';
     categoryLabels, escapeHtml, formatCurrency
   } from '../lib/utils.js';
 
-  const grid = document.getElementById('product-grid');
-  const errorEl = document.getElementById('cashier-error');
-  const catalogLoading = document.getElementById('catalog-loading');
-  const catalogEmpty = document.getElementById('catalog-empty');
-  const cartItemsEl = document.getElementById('cart-items');
-  const cartEmpty = document.getElementById('cart-empty');
-  const cartSummary = document.getElementById('cart-summary');
-  const cartPanel = document.getElementById('cart-panel');
-  const cartFab = document.getElementById('cart-fab');
+  const grid = document.getElementById('product-grid') as HTMLElement;
+  const errorEl = document.getElementById('cashier-error') as HTMLElement;
+  const catalogLoading = document.getElementById('catalog-loading') as HTMLElement;
+  const catalogEmpty = document.getElementById('catalog-empty') as HTMLElement;
+  const cartItemsEl = document.getElementById('cart-items') as HTMLElement;
+  const cartEmpty = document.getElementById('cart-empty') as HTMLElement;
+  const cartSummary = document.getElementById('cart-summary') as HTMLElement;
+  const cartPanel = document.getElementById('cart-panel') as HTMLElement;
+  const cartFab = document.getElementById('cart-fab') as HTMLButtonElement;
+  const openPaymentButton = document.getElementById('open-payment') as HTMLButtonElement;
   let category = 'all';
   let search = '';
-  let currentProducts = [];
+  let currentProducts: any[] = [];
 
-  function showFatalError(error) {
+  function showFatalError(error: unknown) {
     errorEl.hidden = false;
     errorEl.textContent = error instanceof Error ? error.message : 'Data kasir tidak dapat dimuat. Muat ulang halaman atau periksa penyimpanan browser.';
     catalogLoading.hidden = true;
     grid.hidden = true;
-    document.getElementById('open-payment').disabled = true;
+    openPaymentButton.disabled = true;
   }
 
   function renderProducts() {
@@ -111,7 +112,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       return matchesCategory && content.includes(query);
     });
 
-    document.getElementById('catalog-count').textContent = `${filtered.length} varian`;
+    document.getElementById('catalog-count')!.textContent = `${filtered.length} varian`;
     catalogEmpty.hidden = filtered.length !== 0;
     grid.hidden = filtered.length === 0;
     grid.innerHTML = filtered.map(product => {
@@ -125,13 +126,16 @@ import MainLayout from '../layouts/MainLayout.astro';
         : '';
       return `
         <article class="product-card">
+          <a class="product-card-link" href="/parfum?id=${encodeURIComponent(product.id)}" aria-label="Lihat detail ${escapeHtml(product.name)} ukuran ${escapeHtml(product.size)}">
+            <span class="sr-only">Lihat detail parfum</span>
+          </a>
           <div class="product-photo">
             ${photo}
             <span class="photo-fallback" ${product.image ? 'hidden' : ''}>FAMELLO</span>
             ${stockStatus}
           </div>
           <div class="product-details">
-            <span class="product-category">${escapeHtml(categoryLabels[product.category] || product.category)}</span>
+            <span class="product-category">${escapeHtml((categoryLabels as Record<string, string>)[product.category] || product.category)}</span>
             <h2 class="product-name">${escapeHtml(product.name)}</h2>
             <span class="product-size">${escapeHtml(product.size)} · Stok ${product.stock}</span>
             <strong class="product-price">${formatCurrency(product.price)}</strong>
@@ -142,26 +146,28 @@ import MainLayout from '../layouts/MainLayout.astro';
         </article>`;
     }).join('');
 
-    grid.querySelectorAll('.product-photo img').forEach(image => {
+    grid.querySelectorAll<HTMLImageElement>('.product-photo img').forEach(image => {
       image.addEventListener('error', () => {
         image.hidden = true;
-        image.nextElementSibling.hidden = false;
+        if (image.nextElementSibling instanceof HTMLElement) {
+          image.nextElementSibling.hidden = false;
+        }
       }, { once: true });
     });
   }
 
   function renderCart() {
     const cart = getCart();
-    const count = cart.reduce((sum, item) => sum + item.qty, 0);
-    document.getElementById('cart-count').textContent = `${count} item`;
-    document.getElementById('cart-fab-count').textContent = String(count);
+    const count = cart.reduce((sum: number, item: any) => sum + item.qty, 0);
+    document.getElementById('cart-count')!.textContent = `${count} item`;
+    document.getElementById('cart-fab-count')!.textContent = String(count);
     cartItemsEl.innerHTML = '';
     cartEmpty.hidden = cart.length !== 0;
     cartSummary.hidden = cart.length === 0;
-    document.getElementById('open-payment').disabled = cart.length === 0;
+    openPaymentButton.disabled = cart.length === 0;
 
     if (cart.length > 0) {
-      cartItemsEl.innerHTML = cart.map(item => `
+      cartItemsEl.innerHTML = cart.map((item: any) => `
         <div class="cart-line">
           <div class="cart-line-main">
             <strong class="cart-line-name">${escapeHtml(item.name)}</strong>
@@ -178,9 +184,9 @@ import MainLayout from '../layouts/MainLayout.astro';
       `).join('');
     }
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-    document.getElementById('cart-subtotal').textContent = formatCurrency(total);
-    document.getElementById('cart-total').textContent = formatCurrency(total);
+    const total = cart.reduce((sum: number, item: any) => sum + item.price * item.qty, 0);
+    document.getElementById('cart-subtotal')!.textContent = formatCurrency(total);
+    document.getElementById('cart-total')!.textContent = formatCurrency(total);
     renderProducts();
   }
 
@@ -191,13 +197,13 @@ import MainLayout from '../layouts/MainLayout.astro';
     errorEl.hidden = true;
   }
 
-  function setCartOpen(open) {
+  function setCartOpen(open: boolean) {
     const mobile = window.matchMedia('(max-width: 980px)').matches;
     cartPanel.classList.toggle('open', open && mobile);
     cartFab.setAttribute('aria-expanded', String(open && mobile));
     cartFab.setAttribute('aria-label', open && mobile ? 'Tutup keranjang' : 'Buka keranjang');
     cartFab.hidden = mobile && open;
-    document.getElementById('cart-fab-label').textContent = open && mobile ? 'Tutup keranjang' : 'Keranjang';
+    document.getElementById('cart-fab-label')!.textContent = open && mobile ? 'Tutup keranjang' : 'Keranjang';
     cartPanel.toggleAttribute('inert', mobile && !open);
     cartPanel.setAttribute('aria-hidden', String(mobile && !open));
   }
@@ -210,7 +216,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       cartPanel.setAttribute('aria-hidden', 'false');
       cartFab.setAttribute('aria-expanded', 'false');
       cartFab.hidden = false;
-      document.getElementById('cart-fab-label').textContent = 'Keranjang';
+      document.getElementById('cart-fab-label')!.textContent = 'Keranjang';
       return;
     }
     setCartOpen(cartPanel.classList.contains('open'));
@@ -229,9 +235,9 @@ import MainLayout from '../layouts/MainLayout.astro';
     }
   }
 
-  document.getElementById('category-tabs').addEventListener('click', event => {
-    const button = event.target.closest('button[data-category]');
-    if (!button) return;
+  document.getElementById('category-tabs')!.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-category]');
+    if (!button || !button.dataset.category) return;
     category = button.dataset.category;
     document.querySelectorAll('#category-tabs button').forEach(tab => {
       tab.setAttribute('aria-pressed', String(tab === button));
@@ -239,14 +245,14 @@ import MainLayout from '../layouts/MainLayout.astro';
     renderProducts();
   });
 
-  document.getElementById('catalog-search').addEventListener('input', event => {
-    search = event.target.value.trim();
+  document.getElementById('catalog-search')!.addEventListener('input', event => {
+    search = (event.target as HTMLInputElement).value.trim();
     renderProducts();
   });
 
   grid.addEventListener('click', event => {
-    const button = event.target.closest('button[data-add]');
-    if (!button) return;
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-add]');
+    if (!button || !button.dataset.add) return;
     try {
       const productId = button.dataset.add;
       if (!addToCart(productId)) {
@@ -266,16 +272,17 @@ import MainLayout from '../layouts/MainLayout.astro';
   });
 
   cartItemsEl.addEventListener('click', event => {
-    const quantityButton = event.target.closest('button[data-quantity]');
-    const removeButton = event.target.closest('button[data-remove]');
+    const target = event.target as HTMLElement;
+    const quantityButton = target.closest<HTMLButtonElement>('button[data-quantity]');
+    const removeButton = target.closest<HTMLButtonElement>('button[data-remove]');
     try {
       if (quantityButton) {
-        const item = getCart().find(entry => entry.productId === quantityButton.dataset.id);
+        const item = getCart().find((entry: any) => entry.productId === quantityButton.dataset.id);
         if (!item) return;
         const updated = updateCartQty(item.productId, item.qty + Number(quantityButton.dataset.quantity));
         if (!updated) window.showToast('Jumlah melebihi stok yang tersedia.', 'warning');
         refresh();
-      } else if (removeButton) {
+      } else if (removeButton && removeButton.dataset.remove) {
         removeFromCart(removeButton.dataset.remove);
         refresh();
       }
@@ -284,7 +291,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     }
   });
 
-  document.getElementById('clear-cart').addEventListener('click', () => {
+  document.getElementById('clear-cart')!.addEventListener('click', () => {
     try {
       if (getCart().length === 0) return;
       if (!window.confirm('Kosongkan semua parfum dari keranjang?')) return;
@@ -295,12 +302,12 @@ import MainLayout from '../layouts/MainLayout.astro';
     }
   });
 
-  document.getElementById('open-payment').addEventListener('click', openPayment);
-  document.getElementById('close-cart').addEventListener('click', () => {
+  openPaymentButton.addEventListener('click', openPayment);
+  document.getElementById('close-cart')!.addEventListener('click', () => {
     setCartOpen(false);
     cartFab.focus();
   });
-  document.getElementById('cart-fab').addEventListener('click', () => {
+  cartFab.addEventListener('click', () => {
     const open = !cartPanel.classList.contains('open');
     setCartOpen(open);
   });
