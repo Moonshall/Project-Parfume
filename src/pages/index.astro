@@ -17,6 +17,8 @@ import '../styles/global.css';
     />
   </head>
   <body class="login-page">
+    <img class="login-decoration login-decoration-left" src="https://i.imgur.com/zPAX2sr.png" alt="" aria-hidden="true" />
+    <img class="login-decoration login-decoration-right" src="https://i.imgur.com/KDAWDZE.png" alt="" aria-hidden="true" />
     <main class="login-main">
       <section class="login-panel" aria-labelledby="login-title">
         <a class="login-brand" href="/" aria-label="FAMELLO STUDIO">
@@ -51,7 +53,7 @@ import '../styles/global.css';
           <button class="btn btn-primary btn-wide login-submit" id="login-submit" type="submit">Masuk ke FAMELLO</button>
         </form>
 
-       
+        
       </section>
 
       <aside class="login-showcase" aria-label="Sistem kasir FAMELLO">
@@ -77,12 +79,12 @@ import '../styles/global.css';
       const currentSession = getSession();
       if (currentSession) window.location.replace(getHomeForRole(currentSession.role));
 
-      const form = document.getElementById('login-form');
-      const error = document.getElementById('login-error');
-      const password = document.getElementById('password');
-      const passwordToggle = document.getElementById('password-toggle');
-      const submitButton = document.getElementById('login-submit');
-      const defaultSubmitLabel = submitButton.textContent;
+      const form = document.getElementById('login-form') as HTMLFormElement;
+      const error = document.getElementById('login-error') as HTMLElement;
+      const password = document.getElementById('password') as HTMLInputElement;
+      const passwordToggle = document.getElementById('password-toggle') as HTMLButtonElement;
+      const submitButton = document.getElementById('login-submit') as HTMLButtonElement;
+      const defaultSubmitLabel = submitButton.textContent ?? 'Masuk ke FAMELLO';
 
       passwordToggle.addEventListener('click', () => {
         const reveal = password.type === 'password';
